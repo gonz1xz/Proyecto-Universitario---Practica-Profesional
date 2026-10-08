@@ -5,3 +5,9 @@ dist/
 !.env.example
 coverage/
 *.log
+
+# Cuentas de prueba locales
+/cuentasPrueba.md
+
+# Documentación Markdown solo local, por pedido del usuario
+*.md

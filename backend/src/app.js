@@ -1,6 +1,7 @@
 import express from 'express';
 import gamesRouter from './routes/gamesRouter.js';
 import morgan from 'morgan';
+import authRouter from './routes/authRouter.js';
 
 // Global Variables
 const app = express();
@@ -10,11 +11,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Routes
-
-// app.use("/", (req, res) => {
-//     res.send("Welcome to the AuraPrices API")
-// })
-
 app.use("/api/games", gamesRouter);
+app.use('/api/auth', authRouter);
 
 export default app;

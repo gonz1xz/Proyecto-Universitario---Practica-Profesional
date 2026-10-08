@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String
+  email     String   @unique
+  // Este campo guarda el hash de bcrypt, nunca la contraseña original.
+  password  String
+  createdAt DateTime @default(now())
+
+  favorites   Favorite[]
+  priceAlerts PriceAlert[]
+}
+
+model Game {
+  id         Int      @id @default(autoincrement())
+  itadGameId String   @unique
+  createdAt  DateTime @default(now())
+
+  favorites    Favorite[]
+  priceAlerts  PriceAlert[]
+  priceRecords PriceRecord[]
+}
+
+model Store {
+  id          Int      @id @default(autoincrement())
+  itadStoreId String   @unique
+  createdAt   DateTime @default(now())
+
+  priceRecords PriceRecord[]
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  gameId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  // Un usuario no puede guardar dos veces el mismo juego como favorito.
+  @@unique([userId, gameId])
+  @@index([gameId])
+}
+
+model PriceAlert {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  gameId      Int
+  targetPrice Decimal  @db.Decimal(12, 2)
+  isActive    Boolean  @default(true)
+  currency    String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@index([userId])
+  @@index([gameId])
+}
+
+model PriceRecord {
+  id         Int      @id @default(autoincrement())
+  gameId     Int
+  storeId    Int
+  price      Decimal  @db.Decimal(12, 2)
+  currency   String
+  recordedAt DateTime @default(now())
+
+  game  Game  @relation(fields: [gameId], references: [id])
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@index([gameId, recordedAt])
+  @@index([storeId])
+}
