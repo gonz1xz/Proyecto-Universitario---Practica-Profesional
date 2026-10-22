@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
     return () => { active = false; clearTimeout(timer); };
   }, [token]);
 
-  return <AuthContext.Provider value={{ user, loading, login, logout, sessionMessage }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, token, loading, login, logout, sessionMessage }}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);

@@ -17,6 +17,7 @@ model User {
 
   favorites   Favorite[]
   priceAlerts PriceAlert[]
+  notifications Notification[]
 }
 
 model Game {
@@ -42,6 +43,7 @@ model Favorite {
   userId    Int
   gameId    Int
   createdAt DateTime @default(now())
+  saleNotified Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
@@ -59,12 +61,30 @@ model PriceAlert {
   isActive    Boolean  @default(true)
   currency    String
   createdAt   DateTime @default(now())
+  notified    Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
 
   @@index([userId])
   @@index([gameId])
+  @@unique([userId, gameId])
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+  userId Int
+  itadGameId String
+  gameTitle String
+  type String
+  price Decimal @db.Decimal(12, 2)
+  currency String
+  storeName String
+  createdAt DateTime @default(now())
+  readAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model PriceRecord {

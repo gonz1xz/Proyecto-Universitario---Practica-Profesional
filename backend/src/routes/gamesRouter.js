@@ -83,6 +83,99 @@ router.get('/catalog', async (req, res) => {
   }
 });
 
+// Las estadísticas no incluyen portadas. Se consultan por ID y se reutilizan durante una hora.
+const popularAssetsCache = new Map();
+async function addPopularAssets(games) {
+  return Promise.all(games.map(async game => {
+    const cached = popularAssetsCache.get(game.id);
+    if (cached && Date.now() - cached.savedAt < 60 * 60 * 1000) return { ...game, assets: cached.assets };
+    try {
+      const url = new URL('https://api.isthereanydeal.com/games/info/v2');
+      url.searchParams.set('id', game.id);
+      const response = await fetch(url, {
+        headers: { 'ITAD-API-Key': process.env.ITAD_API_KEY },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) return { ...game, assets: null };
+      const info = await response.json();
+      if (info.id !== game.id || !info.assets || typeof info.assets !== 'object') return { ...game, assets: null };
+      if (popularAssetsCache.size >= 100) popularAssetsCache.delete(popularAssetsCache.keys().next().value);
+      popularAssetsCache.set(game.id, { assets: info.assets, savedAt: Date.now() });
+      return { ...game, assets: info.assets };
+    } catch {
+      // Un fallo de portada no debe impedir mostrar el ranking.
+      return { ...game, assets: null };
+    }
+  }));
+}
+
+// Estas listas comparten paginación y manejo de errores, pero cada una usa su endpoint de ITAD.
+async function loadGameList(req, res, endpoint, responseKey, extraParams = {}, maxLimit = 50) {
+  const offsetValue = req.query.offset ?? '0';
+  const limitValue = req.query.limit ?? '20';
+  const offset = Number(offsetValue);
+  const limit = Number(limitValue);
+  if (typeof offsetValue !== 'string' || !/^\d+$/.test(offsetValue) || !Number.isSafeInteger(offset) ||
+      typeof limitValue !== 'string' || !/^\d+$/.test(limitValue) || !Number.isSafeInteger(limit) ||
+      limit < 1 || limit > maxLimit) {
+    return res.status(400).json({ error: 'La paginación no es válida. offset debe ser un entero mayor o igual a 0 y limit debe estar entre 1 y ' + maxLimit + '.' });
+  }
+  if (responseKey === 'games' && req.query.includeAssets !== undefined &&
+      !['true', 'false'].includes(req.query.includeAssets)) {
+    return res.status(400).json({ error: 'includeAssets debe ser true o false.' });
+  }
+  if (responseKey === 'games' && req.query.includeAssets === 'true' && limit > 24) {
+    return res.status(400).json({ error: 'Las consultas de populares con portadas permiten hasta 24 juegos.' });
+  }
+  if (!process.env.ITAD_API_KEY) {
+    return res.status(503).json({ error: 'Falta configurar la conexión con IsThereAnyDeal.' });
+  }
+  const url = new URL('https://api.isthereanydeal.com' + endpoint);
+  url.search = new URLSearchParams({ offset, limit, ...extraParams });
+  try {
+    const response = await fetch(url, {
+      headers: { 'ITAD-API-Key': process.env.ITAD_API_KEY },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'No se pudo obtener la lista de IsThereAnyDeal.' });
+    }
+    const data = await response.json();
+    const items = responseKey === 'deals' ? data?.list : data;
+    if (!Array.isArray(items) || !items.every(item => item &&
+        (typeof item.id === 'string' || Number.isInteger(item.id)) && typeof item.title === 'string')) {
+      return res.status(502).json({ error: 'IsThereAnyDeal devolvió una lista con un formato inesperado.' });
+    }
+    if (responseKey === 'deals' && (typeof data.hasMore !== 'boolean' || !Number.isSafeInteger(data.nextOffset) || data.nextOffset < 0 ||
+        !items.every(game => game.deal?.price?.currency === 'USD' &&
+          Number.isFinite(game.deal.price.amount) && game.deal.price.amount >= 0 &&
+          Number.isFinite(game.deal.cut) && game.deal.cut >= 80 && game.deal.cut <= 90 &&
+          typeof game.deal.shop?.name === 'string'))) {
+      return res.status(502).json({ error: 'IsThereAnyDeal devolvió ofertas con un formato o precio inesperado.' });
+    }
+    const result = responseKey === 'games' && req.query.includeAssets === 'true'
+      ? await addPopularAssets(items) : items;
+    const pagination = responseKey === 'deals' ? { hasMore: data.hasMore, nextOffset: data.nextOffset } : {};
+    res.json({ [responseKey]: result, offset, limit, ...pagination });
+  } catch {
+    res.status(502).json({ error: 'No se pudo conectar con IsThereAnyDeal. Intentá nuevamente.' });
+  }
+}
+
+// La popularidad de ITAD suma las listas de deseados y las colecciones de sus usuarios.
+router.get('/popular', (req, res) => loadGameList(req, res, '/stats/most-popular/v1', 'games', {}, 500));
+
+// Regalos por tiempo limitado; no es un catálogo de juegos free-to-play.
+router.get('/giveaways', (req, res) => loadGameList(req, res, '/giveaways/v1', 'giveaways', {
+  expired: false, sort: '-publish',
+}));
+
+// Mejores ofertas: descuentos entre 80% y 90%, del mayor al menor, en USD.
+router.get('/deals', (req, res) => loadGameList(req, res, '/deals/v2', 'deals', {
+  country: 'US', sort: '-cut', nondeals: false,
+  filter: JSON.stringify({ cut: { min: 80, max: 90 } }),
+}, 200));
+
 // Informacion sobre el precio del juego por id
 router.get('/:id/prices', async (req, res) => {
   const gameId = req.params.id;

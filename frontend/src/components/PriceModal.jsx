@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, LoaderCircle, Store, X } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext.jsx';
 import { getGamePrices } from '../services/gamesApi.js';
 
-const formatPrice = (price) => {
-  if (!price) return 'Precio no informado';
-
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: price.currency,
-  }).format(price.amount);
-};
-
 export const PriceModal = ({ game, onClose }) => {
+  const { formatPrice, currency } = useCurrency();
   const dialogRef = useRef(null);
   const [deals, setDeals] = useState([]);
   const [status, setStatus] = useState('loading');
@@ -121,7 +114,7 @@ export const PriceModal = ({ game, onClose }) => {
         </div>
 
         <p className="border-t border-text/[0.07] px-5 py-4 text-center text-xs text-muted">
-          Precios en la región configurada por el backend.
+          {currency === 'ARS' ? 'Conversión aproximada a ARS, sin impuestos ni cargos. Precios originales de la región US en USD.' : 'Precios de la región US en USD.'}
         </p>
       </div>
     </dialog>

@@ -87,3 +87,26 @@ export const getCatalog = async (filters, offset = 0, signal) => {
   if (!Array.isArray(data.games)) throw new Error('El catálogo no tiene el formato esperado.');
   return data;
 };
+
+
+// Las secciones del inicio cargan por separado para que un error no bloquee las demás.
+async function getHomeList(path, key, signal, extraParams = {}) {
+  const params = new URLSearchParams({ limit: 6, ...extraParams });
+  let response;
+  try {
+    response = await fetch(GAMES_ENDPOINT + '/' + path + '?' + params, { signal });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new Error('No pudimos conectarnos con el servidor. Intentá nuevamente.');
+  }
+  let data;
+  try { data = await response.json(); }
+  catch { throw new Error('El servidor devolvió una respuesta inesperada.'); }
+  if (!response.ok) throw new Error(data?.error || 'No se pudo cargar esta sección.');
+  if (!Array.isArray(data?.[key])) throw new Error('La lista recibida no tiene el formato esperado.');
+  return data[key];
+}
+
+export const getPopularGames = signal => getHomeList('popular', 'games', signal, { includeAssets: true });
+export const getGiveaways = signal => getHomeList('giveaways', 'giveaways', signal);
+export const getBestDeals = signal => getHomeList('deals', 'deals', signal);

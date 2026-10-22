@@ -9,7 +9,7 @@ export const CatalogSidebar = ({ filters, onChange, onApply, onReset }) => {
         <label className="text-sm font-medium">Precio máximo (USD)<input className={fieldClass} type="number" min="0" step="0.01" placeholder="Sin límite" value={filters.maxPrice} onChange={(event) => onChange('maxPrice', event.target.value)} /></label>
         <label className="text-sm font-medium">Descuento mínimo<select className={fieldClass} value={filters.minDiscount} onChange={(event) => onChange('minDiscount', event.target.value)}><option value="0">Cualquier precio</option><option value="1">Solo con descuento</option><option value="25">25% o más</option><option value="50">50% o más</option><option value="75">75% o más</option></select></label>
         <button type="submit" className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-background hover:bg-primary/90">Aplicar filtros</button>
-        <p className="text-xs leading-5 text-muted">Precios para la región US, en dólares estadounidenses.</p>
+        <p className="text-xs leading-5 text-muted">Precios originales de la región US. El precio máximo se ingresa siempre en USD, aunque elijas mostrar ARS.</p>
       </form>
     </aside>
   );
