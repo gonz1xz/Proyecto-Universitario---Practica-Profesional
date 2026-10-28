@@ -7,8 +7,15 @@
       name="description"
       content="AuraPrices: descubrí videojuegos, compará ofertas y encontrá tu próximo juego al mejor precio."
     />
-    <meta name="theme-color" content="#0b1020" />
-    <title>AuraPrices | Tu radar de ofertas gamer</title>
+    <meta name="theme-color" content="#142238" />
+    <script>
+      // Leer el tema antes de dibujar evita un destello oscuro al elegir claro.
+      let savedTheme;
+      try { savedTheme = localStorage.getItem('auraprices_theme'); } catch {}
+      document.documentElement.dataset.theme = savedTheme === 'light' ? 'light' : 'dark';
+      document.querySelector('meta[name="theme-color"]').content = savedTheme === 'light' ? '#f2f6fc' : '#142238';
+    </script>
+    <title>AuraPrices | Tu próximo juego, a tu mejor precio</title>
   </head>
   <body>
     <div id="root"></div>

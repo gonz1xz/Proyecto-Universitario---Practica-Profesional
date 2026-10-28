@@ -42,7 +42,7 @@ export const RegisterPage = () => {
   if (user && !loading) return <Navigate to="/" replace />;
 
   return (
-    <AuthShell eyebrow="AuraPrices" title="Crear cuenta" subtitle="Completá tus datos para registrarte.">
+    <AuthShell title="Crear cuenta" subtitle="Guardá tus juegos y recibí avisos cuando estén en oferta.">
       <form className="mt-8 grid gap-4" onSubmit={submit} noValidate>
         <AuthField label="Nombre de usuario" icon={UserRound} name="username" value={form.username} onChange={update} placeholder="Tu nombre o nickname" autoComplete="username" error={errors.username} />
         <AuthField label="Correo electrónico" icon={Mail} name="email" type="email" value={form.email} onChange={update} placeholder="vos@ejemplo.com" autoComplete="email" error={errors.email} />

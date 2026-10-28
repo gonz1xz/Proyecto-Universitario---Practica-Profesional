@@ -43,7 +43,7 @@ export const LoginPage = () => {
   if (user && !loading) return <Navigate to="/" replace />;
 
   return (
-    <AuthShell eyebrow="AuraPrices" title="Iniciar sesión" subtitle="Ingresá con tu correo electrónico y contraseña.">
+    <AuthShell title="Iniciar sesión" subtitle="Volvé a tus favoritos y encontrá qué jugar después.">
       <form className="mt-8 grid gap-5" onSubmit={submit} noValidate>
         {location.state?.registered && <p className="text-sm font-semibold text-primary" role="status">Tu cuenta fue creada. Iniciá sesión para continuar.</p>}
         <AuthField label="Correo electrónico" icon={Mail} name="email" type="email" value={form.email} onChange={update} placeholder="vos@ejemplo.com" autoComplete="email" error={errors.email} />

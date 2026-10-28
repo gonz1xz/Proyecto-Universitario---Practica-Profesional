@@ -71,13 +71,13 @@ export const SearchPage = () => {
   const resetFilters = () => { setDraftFilters(defaultFilters); setFilters(defaultFilters); };
 
   return (
-    <main className="mx-auto min-h-[calc(100vh-10rem)] max-w-7xl px-5 py-8 sm:px-8">
-      <div className="mb-7">
-        <h1 className="text-3xl font-semibold tracking-tight">{query ? `Resultados para “${query}”` : 'Explorar videojuegos'}</h1>
+    <main id="main-content" className="page-container inner-page">
+      <div className="page-heading">
+        <h1>{query ? `Resultados para “${query}”` : 'Encontrá tu próximo juego'}</h1>
         <p className="mt-2 text-sm text-muted">{query ? 'Filtrá los resultados o buscá otro título desde la barra superior.' : 'Compará precios y encontrá juegos según tu presupuesto.'}</p>
         {query && <Link to="/buscar" className="mt-3 inline-block text-sm text-primary hover:underline">Ver catálogo completo</Link>}
       </div>
-      <div className="grid items-start gap-7 lg:grid-cols-[230px_minmax(0,1fr)]">
+      <div className="catalog-layout">
         <CatalogSidebar filters={draftFilters} onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))} onApply={() => setFilters({ ...draftFilters })} onReset={resetFilters} />
         <section aria-label="Juegos" aria-live="polite" aria-busy={status === 'loading' || loadingMore}>
           {status === 'loading' && <p className="py-12 text-center text-sm text-muted">Cargando juegos y precios...</p>}

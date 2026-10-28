@@ -53,11 +53,11 @@ export const PriceModal = ({ game, onClose }) => {
       <div className="flex max-h-[calc(100vh-2rem)] flex-col">
         <header className="flex items-start justify-between gap-5 border-b border-text/[0.07] px-5 py-5 sm:px-7 sm:py-6">
           <div>
-            <p className="mb-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-primary">Ofertas disponibles</p>
+            <p className="mb-2 text-sm font-medium text-accent">Compará las tiendas</p>
             <h2 className="text-xl font-semibold leading-7 text-text" id="price-modal-title">{game.title}</h2>
           </div>
           <button
-            className="grid size-10 shrink-0 place-items-center border border-text/20 text-muted transition hover:border-accent hover:bg-accent hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="grid size-11 shrink-0 place-items-center rounded-full border border-text/20 text-muted transition hover:border-accent hover:bg-accent hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             type="button"
             onClick={onClose}
             aria-label="Cerrar precios"
@@ -81,24 +81,24 @@ export const PriceModal = ({ game, onClose }) => {
           {status === 'success' && (
             <ul className="grid gap-2.5">
               {deals.map((deal) => (
-                <li key={`${deal.shop.id}-${deal.url}`} className="flex flex-col gap-4 border border-text/[0.1] bg-text/[0.025] p-4 transition hover:border-primary/60 sm:flex-row sm:items-center">
+                <li key={`${deal.shop.id}-${deal.url}`} className="flex flex-col gap-4 rounded-xl border border-text/10 bg-background/40 p-4 sm:flex-row sm:items-center">
                   <span className="grid size-10 shrink-0 place-items-center border border-text/10 bg-text/[0.06] text-muted">
                     <Store size={18} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <strong className="truncate text-sm font-medium text-text">{deal.shop.name}</strong>
-                      {deal.cut > 0 && <span className="bg-primary px-1.5 py-0.5 font-mono text-[10px] font-black text-background">-{deal.cut}%</span>}
+                      {deal.cut > 0 && <span className="rounded-md bg-accent px-2 py-1 text-xs font-bold text-background">−{deal.cut}%</span>}
                     </div>
                     <p className="mt-1 text-xs text-muted">Oferta disponible</p>
                   </div>
                   <div className="flex items-center justify-between gap-5 sm:justify-end">
                     <div className="flex flex-col items-end">
-                      <strong className="text-sm font-semibold text-text">{formatPrice(deal.price)}</strong>
+                      <strong className="text-xl font-bold text-accent">{formatPrice(deal.price)}</strong>
                       {deal.cut > 0 && <s className="text-xs text-muted" aria-label="Precio regular">{formatPrice(deal.regular)}</s>}
                     </div>
                     <a
-                      className="grid size-10 shrink-0 place-items-center border-2 border-accent bg-accent text-background transition hover:border-primary hover:bg-primary hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-background transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       href={deal.url}
                       target="_blank"
                       rel="noreferrer"

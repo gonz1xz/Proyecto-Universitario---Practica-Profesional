@@ -52,9 +52,11 @@ export const FavoritesPage = () => {
   if (!user) return <Navigate to="/iniciar-sesion" replace />;
   const visibleGames = games.filter(game => ids.includes(game.id));
   return (
-    <main className="mx-auto min-h-[calc(100vh-10rem)] max-w-7xl px-5 py-8 sm:px-8">
-      <h1 className="text-3xl font-semibold tracking-tight">Mis favoritos</h1>
-      <p className="mt-2 text-sm text-muted">Tus juegos guardados. Tocá el corazón para quitar un favorito.</p>
+    <main id="main-content" className="page-container inner-page">
+      <div className="page-heading">
+        <h1>Tu lista para jugar después</h1>
+        <p className="mt-2 text-sm text-muted">Tus favoritos, sus precios y las ofertas que esperás. Tocá el corazón para quitar un juego.</p>
+      </div>
       {(favoritesStatus === 'loading' || favoritesStatus === 'idle' || (favoritesStatus === 'success' && status === 'loading')) && <p className="py-10 text-sm text-muted" role="status">Cargando favoritos...</p>}
       {(favoritesStatus === 'error' || status === 'error') && <div className="mt-7 rounded-lg border border-text/10 bg-surface p-6"><p role="alert" className="text-sm text-primary">{favoritesError || error}</p><button type="button" onClick={() => { reload(); setRetry(current => current + 1); }} className="mt-3 text-sm text-primary hover:underline">Reintentar</button></div>}
       {favoritesStatus === 'success' && status === 'success' && (visibleGames.length ? <>

@@ -27,7 +27,7 @@ export function FavoriteButton({ game }) {
   }
   return (
     <div className="absolute right-3 top-3 z-20">
-      <button type="button" disabled={loading || pending || status === 'loading'} onClick={toggle} aria-label={(saved ? 'Quitar ' : 'Añadir ') + game.title + (saved ? ' de favoritos' : ' a favoritos')} aria-pressed={saved} className={'grid size-9 place-items-center rounded-full bg-background/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ' + (saved ? 'text-primary' : 'text-text hover:text-primary')}>
+      <button type="button" disabled={loading || pending || status === 'loading'} onClick={toggle} aria-label={(saved ? 'Quitar ' : 'Añadir ') + game.title + (saved ? ' de favoritos' : ' a favoritos')} aria-pressed={saved} className={'grid size-11 place-items-center rounded-full border border-text/15 bg-background/95 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ' + (saved ? 'text-primary' : 'text-text hover:text-primary')}>
         {pending ? <LoaderCircle size={17} className="animate-spin" /> : <Heart size={17} fill={saved ? 'currentColor' : 'none'} />}
       </button>
       {error && <p role="alert" className="absolute right-0 top-11 w-56 rounded-md border border-primary/30 bg-surface p-3 text-xs text-primary shadow-lg">{error}</p>}

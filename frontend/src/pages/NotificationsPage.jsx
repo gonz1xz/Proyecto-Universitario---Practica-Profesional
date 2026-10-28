@@ -39,9 +39,11 @@ function NotificationsHistory({ token }) {
     } catch (error) { setError(error.message); }
     finally { setMarking(false); }
   }
-  return <main className="mx-auto min-h-[calc(100vh-10rem)] max-w-4xl px-5 py-8 sm:px-8">
-    <h1 className="text-3xl font-semibold tracking-tight">Todas tus notificaciones</h1>
-    <p className="mt-2 text-sm text-muted">Tu historial de ofertas y avisos de precio, del más reciente al más antiguo.</p>
+  return <main id="main-content" className="page-container inner-page notifications-page">
+    <div className="page-heading">
+      <h1>Tus juegos tienen novedades</h1>
+      <p className="mt-2 text-sm text-muted">Todas tus notificaciones de ofertas y precios, de la más reciente a la más antigua.</p>
+    </div>
     {data.unreadCount > 0 && <button type="button" disabled={marking} onClick={markRead} className="mt-5 text-sm text-primary disabled:opacity-60">Marcar todas como leídas</button>}
     {error && <div className="mt-5"><p role="alert" className="text-sm text-primary">{error}</p><button type="button" onClick={() => setRetry(current => current + 1)} className="mt-2 text-sm text-primary underline">Reintentar</button></div>}
     {loading ? <p role="status" className="py-8">Cargando notificaciones...</p> : data.notifications.length ? <NotificationList notifications={data.notifications} /> : !error && <p className="py-8 text-sm text-muted">Todavía no tenés notificaciones. Guardá favoritos y elegí el precio que esperás.</p>}
