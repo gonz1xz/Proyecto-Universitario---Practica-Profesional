@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from './AuthContext.jsx';
-import { getFavorites, addFavorite, removeFavorite } from '../services/favoritesApi.js';
+import { getFavorites, addFavorite, removeFavorite, removeFavorites as deleteFavorites } from '../services/favoritesApi.js';
 
 const FavoritesContext = createContext(null);
 export function FavoritesProvider({ children }) {
@@ -46,6 +46,25 @@ export function FavoritesProvider({ children }) {
       setPending(current => current.filter(key => key !== operationKey));
     }
   }
-  return <FavoritesContext.Provider value={{ ids, status, error: state.key === sessionKey ? state.error : '', isFavorite: id => ids.includes(id), isPending: id => pending.includes(sessionKey + ':' + id), toggleFavorite, reload: () => setRetry(current => current + 1) }}>{children}</FavoritesContext.Provider>;
+  async function removeFavorites(selectedIds) {
+    if (!sessionKey || loading) throw new Error('Necesitás iniciar sesión para quitar favoritos.');
+    const keys = selectedIds.map(id => sessionKey + ':' + id);
+    if (keys.some(key => locks.current.has(key))) throw new Error('Esperá a que termine la actualización de tus favoritos.');
+    keys.forEach(key => locks.current.add(key));
+    setPending(current => [...current, ...keys]);
+    try {
+      const result = await deleteFavorites(selectedIds, token);
+      if (currentSession.current !== sessionKey) return result;
+      setState(current => current.key === sessionKey
+        ? { ...current, ids: current.ids.filter(id => !result.removedIds.includes(id)) }
+        : current);
+      return result;
+    } finally {
+      keys.forEach(key => locks.current.delete(key));
+      setPending(current => current.filter(key => !keys.includes(key)));
+    }
+  }
+
+  return <FavoritesContext.Provider value={{ ids, status, error: state.key === sessionKey ? state.error : '', isFavorite: id => ids.includes(id), isPending: id => pending.includes(sessionKey + ':' + id), toggleFavorite, removeFavorites, reload: () => setRetry(current => current + 1) }}>{children}</FavoritesContext.Provider>;
 }
 export const useFavorites = () => useContext(FavoritesContext);

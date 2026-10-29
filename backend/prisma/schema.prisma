@@ -33,6 +33,7 @@ model Game {
 model Store {
   id          Int      @id @default(autoincrement())
   itadStoreId String   @unique
+  name        String?
   createdAt   DateTime @default(now())
 
   priceRecords PriceRecord[]
@@ -99,5 +100,6 @@ model PriceRecord {
   store Store @relation(fields: [storeId], references: [id])
 
   @@index([gameId, recordedAt])
+  @@index([gameId, storeId, recordedAt])
   @@index([storeId])
 }

@@ -74,6 +74,23 @@ router.post('/', async (req, res) => {
   } catch { res.status(500).json({ message: 'No se pudo guardar el favorito.' }); }
 });
 
+// Eliminar una selección en una transacción y siempre dentro del usuario del JWT.
+router.delete('/', async (req, res) => {
+  const selected = req.body?.itadGameIds;
+  if (!Array.isArray(selected) || selected.length < 1 || selected.length > 100 || !selected.every(validGameId)) {
+    return res.status(400).json({ message: 'Seleccioná entre 1 y 100 juegos con identificadores válidos.' });
+  }
+  const removedIds = [...new Set(selected.map(id => id.toLowerCase()))];
+  const where = { userId: req.userId, game: { itadGameId: { in: removedIds } } };
+  try {
+    const [, result] = await prisma.$transaction([
+      prisma.priceAlert.deleteMany({ where }),
+      prisma.favorite.deleteMany({ where }),
+    ]);
+    res.json({ removedIds, removedCount: result.count });
+  } catch { res.status(500).json({ message: 'No se pudieron quitar los favoritos seleccionados. Intentá nuevamente.' }); }
+});
+
 router.delete('/:itadGameId', async (req, res) => {
   if (!validGameId(req.params.itadGameId)) return res.status(400).json({ message: 'El identificador del juego no es válido.' });
   try {

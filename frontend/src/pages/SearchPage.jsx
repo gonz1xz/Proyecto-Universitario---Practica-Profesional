@@ -3,8 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CatalogSidebar } from '../components/CatalogSidebar.jsx';
 import { GameCard } from '../components/GameCard.jsx';
 import { PriceModal } from '../components/PriceModal.jsx';
+import { GameInfoModal } from '../components/GameInfoModal.jsx';
 import { getCatalog, searchGames } from '../services/gamesApi.js';
-import { defaultFilters, filterSearchGames } from '../services/catalogFilters.js';
+import { defaultFilters, filterSearchGames, isRankingSort } from '../services/catalogFilters.js';
 
 export const SearchPage = () => {
   const [params] = useSearchParams();
@@ -15,6 +16,7 @@ export const SearchPage = () => {
   const [status, setStatus] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedGame, setSelectedGame] = useState(null);
+  const [infoGame, setInfoGame] = useState(null);
   const [pagination, setPagination] = useState({ hasMore: false, nextOffset: 0 });
   const [loadingMore, setLoadingMore] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -26,6 +28,7 @@ export const SearchPage = () => {
     setStatus('loading');
     setErrorMessage('');
     setSelectedGame(null);
+    setInfoGame(null);
     setLoadingMore(false);
     const loadGames = async () => {
       try {
@@ -67,7 +70,16 @@ export const SearchPage = () => {
       if (!controller.signal.aborted) setLoadingMore(false);
     }
   };
-  const visibleGames = query ? filterSearchGames(games, filters) : games;
+  // Una búsqueda por título usa precio/descuento; los rankings son globales.
+  const searchFilters = query && isRankingSort(filters.sort) ? { ...filters, sort: '-cut' } : filters;
+  const sidebarFilters = query && isRankingSort(draftFilters.sort) ? { ...draftFilters, sort: '-cut' } : draftFilters;
+  const ranking = !query && isRankingSort(filters.sort);
+  const visibleGames = query || ranking ? filterSearchGames(games, searchFilters) : games;
+  const rankingDescriptions = {
+    popular: 'Popularidad en ITAD: suma de listas de deseados y colecciones.',
+    waitlisted: 'Más agregados a listas de deseados de los usuarios de ITAD.',
+    collected: 'Más presentes en las colecciones de usuarios de ITAD. No representa un ranking de ventas.',
+  };
   const resetFilters = () => { setDraftFilters(defaultFilters); setFilters(defaultFilters); };
 
   return (
@@ -78,19 +90,21 @@ export const SearchPage = () => {
         {query && <Link to="/buscar" className="mt-3 inline-block text-sm text-primary hover:underline">Ver catálogo completo</Link>}
       </div>
       <div className="catalog-layout">
-        <CatalogSidebar filters={draftFilters} onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))} onApply={() => setFilters({ ...draftFilters })} onReset={resetFilters} />
+        <CatalogSidebar filters={sidebarFilters} isSearch={Boolean(query)} onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))} onApply={() => setFilters({ ...sidebarFilters })} onReset={resetFilters} />
         <section aria-label="Juegos" aria-live="polite" aria-busy={status === 'loading' || loadingMore}>
           {status === 'loading' && <p className="py-12 text-center text-sm text-muted">Cargando juegos y precios...</p>}
           {status === 'error' && <div className="rounded-lg border border-text/10 bg-surface p-6"><p className="text-sm text-primary" role="alert">{errorMessage}</p><button type="button" onClick={() => setRetry((current) => current + 1)} className="mt-4 text-sm font-semibold text-primary hover:underline">Reintentar</button></div>}
           {status === 'success' && <>
+            {ranking && <div className="mb-5 rounded-lg border border-text/10 bg-surface p-4 text-sm leading-6 text-muted"><p>{rankingDescriptions[filters.sort]}</p><p>Los filtros se aplican a los juegos cargados de este ranking. Cargá más para revisar los siguientes puestos.</p></div>}
             <p className="mb-4 text-sm text-muted">{visibleGames.length} juegos{query ? ' en los resultados de búsqueda' : ' cargados'}</p>
-            {visibleGames.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{visibleGames.map((game) => <GameCard key={game.id} game={game} onShowPrices={setSelectedGame} />)}</div> : <div className="rounded-lg border border-text/10 bg-surface p-8 text-center"><p className="text-sm text-muted">No hay juegos que coincidan con estos filtros{query ? ' y esta búsqueda' : ''}.</p><button type="button" onClick={resetFilters} className="mt-4 text-sm font-medium text-primary hover:underline">Limpiar filtros</button></div>}
+            {visibleGames.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{visibleGames.map((game) => <GameCard key={game.id} game={game} onShowPrices={setSelectedGame} onShowInfo={setInfoGame} />)}</div> : <div className="rounded-lg border border-text/10 bg-surface p-8 text-center"><p className="text-sm text-muted">No hay juegos que coincidan con estos filtros{query ? ' y esta búsqueda' : ''}.</p><button type="button" onClick={resetFilters} className="mt-4 text-sm font-medium text-primary hover:underline">Limpiar filtros</button></div>}
             {errorMessage && <p className="mt-5 text-sm text-primary" role="alert">{errorMessage}</p>}
             {!query && pagination.hasMore && <div className="mt-8 text-center"><button type="button" disabled={loadingMore} onClick={loadMore} className="rounded-md border border-primary px-6 py-2.5 text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-60">{loadingMore ? 'Cargando...' : 'Cargar más juegos'}</button></div>}
           </>}
         </section>
       </div>
       {selectedGame && <PriceModal game={selectedGame} onClose={() => setSelectedGame(null)} />}
+      {infoGame && <GameInfoModal key={infoGame.id} game={infoGame} onClose={() => setInfoGame(null)} />}
     </main>
   );
 };

@@ -1,4 +1,6 @@
-const AUTH_ENDPOINT = '/api/auth';
+import { API_BASE_URL } from './apiBaseUrl.js';
+
+const AUTH_ENDPOINT = API_BASE_URL + '/auth';
 
 async function request(path, { body, token } = {}) {
   let response;

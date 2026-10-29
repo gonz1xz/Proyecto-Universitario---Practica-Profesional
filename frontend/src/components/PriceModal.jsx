@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, LoaderCircle, Store, X } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext.jsx';
 import { getGamePrices } from '../services/gamesApi.js';
+import { PriceHistory } from './PriceHistory.jsx';
 
 export const PriceModal = ({ game, onClose }) => {
   const { formatPrice, currency } = useCurrency();
@@ -9,6 +10,8 @@ export const PriceModal = ({ game, onClose }) => {
   const [deals, setDeals] = useState([]);
   const [status, setStatus] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [view, setView] = useState('current');
+  const [historySaved, setHistorySaved] = useState(true);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -20,12 +23,18 @@ export const PriceModal = ({ game, onClose }) => {
 
   useEffect(() => {
     const controller = new AbortController();
+    setStatus('loading');
+    setErrorMessage('');
+    setView('current');
+    setHistorySaved(true);
 
     const loadPrices = async () => {
       try {
         const foundDeals = await getGamePrices(game.id, controller.signal);
-        setDeals(foundDeals);
-        setStatus(foundDeals.length > 0 ? 'success' : 'empty');
+        if (controller.signal.aborted) return;
+        setDeals(foundDeals.deals);
+        setHistorySaved(foundDeals.historySaved);
+        setStatus(foundDeals.deals.length > 0 ? 'success' : 'empty');
       } catch (error) {
         if (error.name !== 'AbortError') {
           setErrorMessage(error.message);
@@ -67,7 +76,13 @@ export const PriceModal = ({ game, onClose }) => {
           </button>
         </header>
 
+        <div className="price-view-switch" aria-label="Vista de precios">
+          <button type="button" aria-pressed={view === 'current'} onClick={() => setView('current')}>Precios actuales</button>
+          <button type="button" aria-pressed={view === 'history'} disabled={status === 'loading'} onClick={() => setView('history')}>Historial</button>
+        </div>
         <div className="overflow-y-auto px-4 py-4 sm:px-7 sm:py-5" aria-live="polite">
+          {!historySaved && <p className="mb-4 text-sm text-primary" role="status">Los precios actuales están disponibles, pero no pudimos guardarlos en el historial esta vez.</p>}
+          {view === 'history' ? <PriceHistory key={game.id} gameId={game.id} /> : <>
           {status === 'loading' && (
             <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-muted">
               <LoaderCircle size={24} className="animate-spin text-primary" />
@@ -111,10 +126,11 @@ export const PriceModal = ({ game, onClose }) => {
               ))}
             </ul>
           )}
+          </>}
         </div>
 
         <p className="border-t border-text/[0.07] px-5 py-4 text-center text-xs text-muted">
-          {currency === 'ARS' ? 'Conversión aproximada a ARS, sin impuestos ni cargos. Precios originales de la región US en USD.' : 'Precios de la región US en USD.'}
+          {view === 'current' && currency === 'ARS' ? 'Conversión aproximada a ARS, sin impuestos ni cargos. Precios originales de la región US en USD.' : 'Precios de la región US en USD.'}
         </p>
       </div>
     </dialog>

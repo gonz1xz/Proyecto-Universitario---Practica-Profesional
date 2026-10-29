@@ -47,7 +47,7 @@ export function NotificationInbox() {
       {data.unreadCount > 0 && <button type="button" disabled={marking} onClick={markRead} className="mt-4 text-sm text-primary disabled:opacity-60">Marcar todas como leídas</button>}
       {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
       {loading ? <p role="status" className="py-8">Cargando notificaciones...</p> : !data.notifications.length && !error ? <p className="py-8 text-sm text-muted">Todavía no tenés notificaciones. Guardá favoritos y elegí el precio que esperás.</p> : <NotificationList notifications={data.notifications.slice(0, 5)} onNavigate={() => setOpen(false)} />}
-      {data.notifications.length > 5 && <Link to="/notificaciones" onClick={() => setOpen(false)} className="mt-5 inline-block rounded-md border border-primary px-5 py-2.5 text-sm text-primary">Ver m?s</Link>}
+      {data.notifications.length > 5 && <Link to="/notificaciones" onClick={() => setOpen(false)} className="mt-5 inline-block rounded-md border border-primary px-5 py-2.5 text-sm text-primary">Ver más</Link>}
     </dialog>
   </>;
 }

@@ -1,4 +1,6 @@
-const ENDPOINT = '/api/favorites';
+import { API_BASE_URL } from './apiBaseUrl.js';
+
+const ENDPOINT = API_BASE_URL + '/favorites';
 
 async function request(path, token, { method = 'GET', body, signal } = {}) {
   let response;
@@ -30,3 +32,4 @@ export async function getFavoriteGames(token, offset, signal) {
 }
 export const addFavorite = (id, token) => request('', token, { method: 'POST', body: { itadGameId: id } });
 export const removeFavorite = (id, token) => request('/' + encodeURIComponent(id), token, { method: 'DELETE' });
+export const removeFavorites = (ids, token) => request('', token, { method: 'DELETE', body: { itadGameIds: ids } });

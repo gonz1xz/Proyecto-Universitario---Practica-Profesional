@@ -1,4 +1,26 @@
-const GAMES_ENDPOINT = '/api/games';
+import { API_BASE_URL } from './apiBaseUrl.js';
+
+const GAMES_ENDPOINT = API_BASE_URL + '/games';
+
+export async function getGameDetails(gameId, signal) {
+  let response;
+  try {
+    response = await fetch(`${GAMES_ENDPOINT}/${encodeURIComponent(gameId)}/details`, { signal });
+  } catch (error) {
+    if (error.name === 'AbortError') throw error;
+    throw new Error('No se pudo conectar para consultar la información del juego.');
+  }
+  let data;
+  try { data = await response.json(); }
+  catch { throw new Error('El servidor devolvió información inesperada.'); }
+  if (!response.ok) throw new Error(data.error || 'No se pudo cargar la información del juego.');
+  if (data?.id !== gameId.toLowerCase() || typeof data.title !== 'string' ||
+      !Array.isArray(data.developers) || !Array.isArray(data.screenshots) ||
+      (data.description !== null && typeof data.description !== 'string')) {
+    throw new Error('La información recibida no tiene el formato esperado.');
+  }
+  return data;
+}
 
 export const searchGames = async (query, signal) => {
   const params = new URLSearchParams({ search: query, includePrices: true });
@@ -66,12 +88,31 @@ export const getGamePrices = async (gameId, signal) => {
     );
   }
 
-  if (!Array.isArray(data) || !data[0] || !Array.isArray(data[0].deals)) {
+  const game = Array.isArray(data) ? data.find(item => item?.id === gameId.toLowerCase()) : null;
+  if (!Array.isArray(game?.deals)) {
     throw new Error('La respuesta de precios no tiene el formato esperado.');
   }
 
-  return data[0].deals;
+  return { deals: game.deals, historySaved: response.headers.get('X-Price-History-Saved') !== 'false' };
 };
+
+export async function getPriceHistory(gameId, offset = 0, signal) {
+  let response;
+  try {
+    response = await fetch(`${GAMES_ENDPOINT}/${encodeURIComponent(gameId)}/history?limit=50&offset=${offset}`, { signal });
+  } catch (error) {
+    if (error.name === 'AbortError') throw error;
+    throw new Error('No se pudo conectar con el historial. Intentá nuevamente.');
+  }
+  let data;
+  try { data = await response.json(); }
+  catch { throw new Error('El servidor devolvió un historial inesperado.'); }
+  if (!response.ok) throw new Error(data.error || 'No se pudo consultar el historial.');
+  if (!Array.isArray(data.records) || typeof data.hasMore !== 'boolean' || !Number.isSafeInteger(data.nextOffset)) {
+    throw new Error('El historial recibido no tiene el formato esperado.');
+  }
+  return data;
+}
 
 export const getCatalog = async (filters, offset = 0, signal) => {
   const params = new URLSearchParams({ ...filters, offset });

@@ -1,4 +1,5 @@
 import prisma from '../prisma.js';
+import { tryRecordPriceHistory } from './priceHistory.js';
 
 // Se consideran únicamente importes USD válidos; cero incluye los regalos.
 export function selectDeals(deals) {
@@ -31,6 +32,7 @@ export async function checkPriceNotifications() {
         const item = prices.find(item => item.id === game.itadGameId);
         // Una respuesta incompleta no se interpreta como una oferta terminada.
         if (!Array.isArray(item?.deals)) continue;
+        await tryRecordPriceHistory(game.itadGameId, item.deals);
         const { cheapest, sale } = selectDeals(item.deals);
         let gameTitle;
         for (const favorite of game.favorites) {

@@ -74,6 +74,9 @@ button:disabled { cursor: default; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 h1, h2, h3 { font-family: var(--heading-font); overflow-wrap: anywhere; }
 :focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
+/* El foco de los campos se dibuja una sola vez, sobre su contenedor. */
+.auth-control:focus-within, .search-control:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; border-color: var(--primary); }
+.auth-control input:focus-visible, .search-control input:focus-visible { outline: none; }
 ::selection { background: var(--primary); color: var(--background); }
 
 /* Estructura general y navegación. */
@@ -137,6 +140,15 @@ h1, h2, h3 { font-family: var(--heading-font); overflow-wrap: anywhere; }
 .game-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 
 /* Portadas, tarjetas y precios. */
+.game-card-selected { outline: 2px solid var(--primary); outline-offset: 2px; }
+.game-card .ranking-badge-top { top: 12px; bottom: auto; }
+.favorites-selecting { padding-bottom: 160px; }
+.favorite-selection-bar { position: fixed; z-index: 45; bottom: 20px; left: 50%; transform: translateX(-50%); width: min(720px, calc(100% - 32px)); padding: 16px 20px; border: 1px solid var(--primary); border-radius: 16px; background: var(--surface); box-shadow: 0 10px 40px #0004; }
+.selection-bar-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.selection-bar-actions p { flex: 1; font-size: 14px; color: var(--text); }
+.selection-bar-actions strong { color: var(--primary); font-size: 19px; }
+.selection-cancel { min-height: 44px; font-size: 14px; color: var(--muted); }
+.favorite-selection-bar button:disabled { opacity: .6; }
 .game-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
 .game-card:hover { border-color: color-mix(in srgb, var(--primary) 50%, transparent); }
 .game-artwork { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--artwork-background); }
@@ -189,6 +201,37 @@ h1, h2, h3 { font-family: var(--heading-font); overflow-wrap: anywhere; }
 .back-link:hover { color: var(--primary); }
 
 /* Diálogos: precios legibles y acciones fáciles de ubicar. */
+.game-info-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: 8px; border: 1px solid var(--line); border-radius: 9px; color: var(--primary); font-size: 13px; }
+.game-info-button:hover { border-color: var(--primary); background: var(--background); }
+.modal-frame { margin: auto; width: min(48rem, calc(100% - 32px)); max-height: calc(100vh - 32px); padding: 0; overflow: hidden; border: 1px solid var(--line); background: var(--surface); color: var(--text); box-shadow: 0 20px 70px #0005; }
+.modal-frame-compact { width: min(29rem, calc(100% - 32px)); }
+.modal-frame-content { display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+.modal-heading { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.modal-heading h2 { min-width: 0; font-size: 23px; font-weight: 700; line-height: 1.3; }
+.modal-close { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); }
+.modal-close:hover { color: var(--primary); border-color: var(--primary); }
+.modal-body { min-height: 0; overflow-y: auto; padding: 22px; }
+.modal-footer { display: flex; flex-shrink: 0; align-items: center; justify-content: end; flex-wrap: wrap; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--line); }
+.game-info-art { overflow: hidden; border-radius: 12px; }
+.game-info-copy { margin-top: 22px; }
+.game-description { margin-top: 12px; color: var(--muted); font-size: 15px; line-height: 1.85; white-space: pre-line; }
+.game-screenshots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.game-screenshots img { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; border-radius: 9px; background: var(--artwork-background); }
+.screenshot-missing { display: grid; place-items: center; gap: 8px; padding: 20px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font-size: 12px; }
+.game-info-source { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.7; }
+.price-view-switch { display: flex; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.price-view-switch button { min-height: 44px; padding: 10px 14px; border-radius: 9px; font-size: 14px; color: var(--muted); }
+.price-view-switch button[aria-pressed="true"] { background: var(--primary); color: var(--background); font-weight: 700; }
+.price-view-switch button:disabled { opacity: .5; }
+.history-summary { display: grid; gap: 8px; margin-block: 20px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--background); }
+.history-summary span, .history-summary small { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.history-summary strong { font-size: 26px; color: var(--accent); }
+.history-table-container { overflow-x: auto; }
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table th, .history-table td { border-bottom: 1px solid var(--line); padding: 12px 8px; text-align: left; }
+.history-table th { color: var(--muted); font-weight: 600; }
+.history-table td:last-child, .history-table th:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.history-table td:last-child { color: var(--accent); font-weight: 700; }
 .price-modal { border-radius: 18px; }
 .price-modal::backdrop { background: #081323c9; backdrop-filter: blur(6px); }
 .price-modal[open] { animation: modal-in 160ms ease-out; }

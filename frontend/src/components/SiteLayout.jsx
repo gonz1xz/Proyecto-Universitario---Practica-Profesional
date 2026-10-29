@@ -1,4 +1,5 @@
 import { LogOut, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { CurrencySelector } from './CurrencySelector.jsx';
 import { CurrencyNotice } from './CurrencyNotice.jsx';
@@ -7,6 +8,7 @@ import { SearchForm } from './SearchForm.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { NotificationInbox } from './NotificationInbox.jsx';
 import { ThemeToggle } from './ThemeToggle.jsx';
+import { LogoutModal } from './LogoutModal.jsx';
 
 const NavItem = ({ to, children, end = false }) => (
     <NavLink to={to} end={end} className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
@@ -16,6 +18,7 @@ const NavItem = ({ to, children, end = false }) => (
 
 export const SiteLayout = () => {
   const { user, token, loading, logout, sessionMessage } = useAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const navigate = useNavigate();
   const search = (term) => navigate(`/buscar?juego=${encodeURIComponent(term)}`);
 
@@ -33,7 +36,7 @@ export const SiteLayout = () => {
             {loading ? <span className="max-w-24 text-xs text-muted" role="status">Comprobando sesión...</span> : user ? <>
               <NotificationInbox key={user.id + ':' + token} />
               <span className="hidden max-w-32 truncate text-sm text-muted sm:block">{user.username}</span>
-              <button type="button" onClick={logout} className="flex min-h-10 items-center gap-2 rounded-md px-2 text-sm text-muted hover:text-text" aria-label="Cerrar sesión"><LogOut size={18} /><span className="hidden sm:inline">Salir</span></button>
+              <button type="button" onClick={() => setLogoutOpen(true)} className="flex min-h-10 items-center gap-2 rounded-md px-2 text-sm text-muted hover:text-text" aria-label="Cerrar sesión"><LogOut size={18} /><span className="hidden sm:inline">Salir</span></button>
             </> : <>
               <NavLink to="/iniciar-sesion" className="flex min-h-10 items-center gap-2 rounded-full border border-text/15 px-2.5 text-sm text-muted hover:border-primary hover:text-primary" aria-label="Iniciar sesión"><UserRound size={19} /><span className="hidden lg:inline">Iniciar sesión</span></NavLink>
               <NavLink to="/registro" className="button button-primary account-button">Crear cuenta</NavLink>
@@ -60,6 +63,7 @@ export const SiteLayout = () => {
           <p>Precios de la región US. Confirmá el importe final en cada tienda.</p>
         </div>
       </footer>
+      {logoutOpen && user && <LogoutModal key={user.id + ':' + token} onClose={() => setLogoutOpen(false)} onConfirm={() => { setLogoutOpen(false); logout(); }} />}
     </div>
   );
 };

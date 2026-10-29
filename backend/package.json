@@ -2,9 +2,18 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "node --watch ./src/server.js",
+    "build": "prisma generate",
+    "start": "node ./src/server.js",
+    "start:deploy": "npm run db:deploy && npm start",
+    "db:validate": "prisma validate",
+    "db:status": "prisma migrate status",
+    "db:deploy": "prisma migrate deploy",
     "test": "node --test"
   },
   "keywords": [],
@@ -12,7 +21,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "6.19.3",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -25,6 +34,6 @@
     "sanitize-html": "^2.18.0"
   },
   "devDependencies": {
-    "prisma": "^6.19.3"
+    "prisma": "6.19.3"
   }
 }
