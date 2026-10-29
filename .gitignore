@@ -11,3 +11,4 @@ coverage/
 
 # Documentación Markdown solo local, por pedido del usuario
 *.md
+!/README.md
