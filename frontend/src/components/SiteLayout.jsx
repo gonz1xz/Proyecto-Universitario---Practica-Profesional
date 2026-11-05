@@ -17,7 +17,7 @@ const NavItem = ({ to, children, end = false }) => (
 );
 
 export const SiteLayout = () => {
-  const { user, token, loading, logout, sessionMessage } = useAuth();
+  const { user, token, loading, logout, sessionMessage, sessionError } = useAuth();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const navigate = useNavigate();
   const search = (term) => navigate(`/buscar?juego=${encodeURIComponent(term)}`);
@@ -54,7 +54,7 @@ export const SiteLayout = () => {
           </div>
         </div>
       </header>
-      {sessionMessage && <p className="border-b border-primary/20 bg-surface px-5 py-3 text-center text-sm text-primary" role="status">{sessionMessage}</p>}
+      {sessionMessage && <p className={`border-b bg-surface px-5 py-3 text-center text-sm ${sessionError ? 'border-error/40 text-error' : 'border-primary/20 text-primary'}`} role={sessionError ? 'alert' : 'status'}>{sessionMessage}</p>}
       <CurrencyNotice />
       <Outlet />
       <footer className="site-footer">

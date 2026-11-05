@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { NotificationList } from '../components/NotificationList.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -45,7 +45,7 @@ function NotificationsHistory({ token }) {
       <p className="mt-2 text-sm text-muted">Todas tus notificaciones de ofertas y precios, de la más reciente a la más antigua.</p>
     </div>
     {data.unreadCount > 0 && <button type="button" disabled={marking} onClick={markRead} className="mt-5 text-sm text-primary disabled:opacity-60">Marcar todas como leídas</button>}
-    {error && <div className="mt-5"><p role="alert" className="text-sm text-primary">{error}</p><button type="button" onClick={() => setRetry(current => current + 1)} className="mt-2 text-sm text-primary underline">Reintentar</button></div>}
+    {error && <div className="mt-5"><p role="alert" className="text-sm text-error">{error}</p><button type="button" onClick={() => setRetry(current => current + 1)} className="mt-2 text-sm text-primary underline">Reintentar</button></div>}
     {loading ? <p role="status" className="py-8">Cargando notificaciones...</p> : data.notifications.length ? <NotificationList notifications={data.notifications} /> : !error && <p className="py-8 text-sm text-muted">Todavía no tenés notificaciones. Guardá favoritos y elegí el precio que esperás.</p>}
   </main>;
 }

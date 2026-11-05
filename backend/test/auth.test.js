@@ -25,6 +25,7 @@ test('autenticación con PostgreSQL: registro, login y persistencia', async () =
             method: body === undefined ? 'GET' : 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-Aura-Request': '1',
                 ...(token ? { Authorization: `Bearer ${token}` } : {})
             },
             ...(body === undefined ? {} : { body: JSON.stringify(body) })
@@ -80,7 +81,7 @@ test('autenticación con PostgreSQL: registro, login y persistencia', async () =
             await new Promise(resolve => server.once('listening', resolve));
             try {
                 const response = await fetch('http://127.0.0.1:' + server.address().port + '/api/auth/login', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Aura-Request': '1' },
                     body: JSON.stringify({ email: process.env.AUTH_TEST_EMAIL, password: process.env.AUTH_TEST_PASSWORD })
                 });
                 assert.equal(response.status, 200);

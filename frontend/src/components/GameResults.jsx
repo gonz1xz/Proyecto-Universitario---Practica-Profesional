@@ -2,11 +2,11 @@ import { AlertTriangle, Gamepad2, Search, SearchX } from 'lucide-react';
 import { GameCard } from './GameCard.jsx';
 
 const StatusMessage = ({ icon: Icon, title, children, isError = false }) => (
-  <section className={`mx-auto flex max-w-2xl items-start gap-4 rounded-lg border p-5 sm:items-center sm:p-6 ${isError ? 'border-accent/30 bg-surface' : 'border-text/10 bg-surface'}`} aria-live="polite">
-    <span className={`grid size-10 shrink-0 place-items-center rounded-md ${isError ? 'bg-accent text-background' : 'bg-primary text-background'}`} aria-hidden="true"><Icon size={22} /></span>
+  <section className={`mx-auto flex max-w-2xl items-start gap-4 rounded-lg border p-5 sm:items-center sm:p-6 ${isError ? 'border-error/40 bg-surface' : 'border-text/10 bg-surface'}`} aria-live="polite">
+    <span className={`grid size-10 shrink-0 place-items-center rounded-md ${isError ? 'text-error' : 'bg-primary text-background'}`} aria-hidden="true"><Icon size={22} /></span>
     <div>
-      <h2 className="font-semibold text-text">{title}</h2>
-      <p className="mt-1 text-sm font-medium leading-6 text-muted">{children}</p>
+      <h2 className={`font-semibold ${isError ? 'text-error' : 'text-text'}`}>{title}</h2>
+      <p className={`mt-1 text-sm font-medium leading-6 ${isError ? 'text-error' : 'text-muted'}`}>{children}</p>
     </div>
   </section>
 );

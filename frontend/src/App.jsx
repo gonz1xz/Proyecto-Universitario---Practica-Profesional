@@ -6,6 +6,7 @@ import { RegisterPage } from './pages/RegisterPage.jsx';
 import { SearchPage } from './pages/SearchPage.jsx';
 import { NotificationsPage } from './pages/NotificationsPage.jsx';
 import { FavoritesPage } from './pages/FavoritesPage.jsx';
+import { VerifyEmailPage } from './pages/VerifyEmailPage.jsx';
 
 export const App = () => (
   <Routes>
@@ -13,6 +14,7 @@ export const App = () => (
       <Route path="/" element={<HomePage />} />
       <Route path="/buscar" element={<SearchPage />} />
       <Route path="/notificaciones" element={<NotificationsPage />} />
+      <Route path="/notificaciones/verificar-email" element={<VerifyEmailPage />} />
       <Route path="/mis-favoritos" element={<FavoritesPage />} />
     </Route>
     <Route path="/iniciar-sesion" element={<LoginPage />} />

@@ -48,7 +48,7 @@ export const LoginPage = () => {
         {location.state?.registered && <p className="text-sm font-semibold text-primary" role="status">Tu cuenta fue creada. Iniciá sesión para continuar.</p>}
         <AuthField label="Correo electrónico" icon={Mail} name="email" type="email" value={form.email} onChange={update} placeholder="vos@ejemplo.com" autoComplete="email" error={errors.email} />
         <AuthField label="Contraseña" icon={LockKeyhole} name="password" type="password" value={form.password} onChange={update} placeholder="Tu contraseña" autoComplete="current-password" error={errors.password} />
-        {message && <p className="rounded-2xl bg-surface p-4 text-sm font-semibold leading-6 text-primary" role="status">{message}</p>}
+        {message && <p className="rounded-2xl border border-error/40 bg-surface p-4 text-sm font-semibold leading-6 text-error" role="alert">{message}</p>}
         <button disabled={submitting || loading} className="flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-background transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-60" type="submit">{submitting ? 'Ingresando...' : 'Iniciar sesión'} <ArrowRight size={17} /></button>
       </form>
       <p className="mt-7 text-center text-sm font-medium text-muted">¿Todavía no tenés cuenta? <Link to="/registro" className="font-extrabold text-primary hover:text-primary">Registrate gratis</Link></p>

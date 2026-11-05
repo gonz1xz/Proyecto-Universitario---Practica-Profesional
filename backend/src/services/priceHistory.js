@@ -1,63 +1,79 @@
-import prisma from '../prisma.js';
+const cache = new Map();
+const pending = new Map();
+const CACHE_DURATION = 15 * 60 * 1000;
+const MAX_CACHED_GAMES = 100;
 
-// Si hay varias ofertas de una tienda, conservamos la más barata en USD.
-export function selectHistoryDeals(deals) {
-  const stores = new Map();
-  for (const deal of Array.isArray(deals) ? deals : []) {
-    const amount = deal?.price?.amount;
-    const shop = deal?.shop;
-    if (deal?.price?.currency !== 'USD' || !Number.isFinite(amount) ||
-        amount < 0 || amount > 9999999999.99 ||
-        !Number.isSafeInteger(shop?.id) || shop.id < 1 ||
-        typeof shop.name !== 'string' || !shop.name.trim()) continue;
-
-    const price = Math.round(amount * 100) / 100;
-    const previous = stores.get(shop.id);
-    if (!previous || price < previous.price) {
-      stores.set(shop.id, { storeId: String(shop.id), name: shop.name.trim().slice(0, 200), price });
-    }
-  }
-  return [...stores.values()];
+function historyError(message, status = 502) {
+  return Object.assign(new Error(message), { status });
 }
 
-export async function recordPriceHistory(itadGameId, deals) {
-  const selected = selectHistoryDeals(deals);
-  if (!selected.length) return;
-
-  // Serializable evita duplicados si dos consultas intentan guardar lo mismo a la vez.
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      await prisma.$transaction(async tx => {
-        const game = await tx.game.upsert({ where: { itadGameId }, create: { itadGameId }, update: {} });
-        for (const deal of selected) {
-          const store = await tx.store.upsert({
-            where: { itadStoreId: deal.storeId },
-            create: { itadStoreId: deal.storeId, name: deal.name },
-            update: { name: deal.name },
-          });
-          const previous = await tx.priceRecord.findFirst({
-            where: { gameId: game.id, storeId: store.id, currency: 'USD' },
-            orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
-          });
-          if (!previous || Number(previous.price) !== deal.price) {
-            await tx.priceRecord.create({ data: { gameId: game.id, storeId: store.id, price: deal.price, currency: 'USD' } });
-          }
-        }
-      }, { isolationLevel: 'Serializable' });
-      return;
-    } catch (error) {
-      if (!['P2034', 'P2002'].includes(error.code) || attempt === 2) throw error;
-    }
+export function normalizeHistory(data) {
+  if (!Array.isArray(data)) throw historyError('ITAD devolvió un historial con un formato inesperado.');
+  const records = [];
+  const seen = new Set();
+  for (const entry of data) {
+    // ITAD también informa ofertas retiradas con deal=null; no son precio cero.
+    if (entry?.deal === null) continue;
+    const amount = entry?.deal?.price?.amount;
+    const timestamp = typeof entry?.timestamp === 'string' ? Date.parse(entry.timestamp) : NaN;
+    if (entry?.deal?.price?.currency !== 'USD' || !Number.isFinite(amount) || amount < 0 ||
+        !Number.isSafeInteger(entry.shop?.id) || entry.shop.id < 1 ||
+        typeof entry.shop.name !== 'string' || !entry.shop.name.trim() || !Number.isFinite(timestamp)) continue;
+    const recordedAt = new Date(timestamp).toISOString();
+    const id = `${entry.shop.id}:${recordedAt}:${amount}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    records.push({ id, price: amount, currency: 'USD', recordedAt,
+      store: { id: String(entry.shop.id), name: entry.shop.name.trim() } });
   }
+  return records.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt) || a.id.localeCompare(b.id));
 }
 
-// Un problema al guardar el historial no debe impedir comparar ni recibir avisos.
-export async function tryRecordPriceHistory(itadGameId, deals) {
+async function loadHistory(gameId) {
+  const url = new URL('https://api.isthereanydeal.com/games/history/v2');
+  url.searchParams.set('id', gameId);
+  url.searchParams.set('country', 'US');
+  let response;
   try {
-    await recordPriceHistory(itadGameId, deals);
-    return true;
+    response = await fetch(url, {
+      headers: { 'ITAD-API-Key': process.env.ITAD_API_KEY },
+      signal: AbortSignal.timeout(15000),
+    });
   } catch {
-    console.error('No se pudo guardar el historial de precios. Se reintentará en la próxima consulta.');
-    return false;
+    throw historyError('No pudimos conectarnos con el historial de ITAD. Intentá nuevamente.');
   }
+  if (!response.ok) {
+    if (response.status === 429) throw historyError('ITAD recibió demasiadas consultas. Intentá nuevamente más tarde.', 429);
+    throw historyError('No se pudo consultar el historial de ITAD. Intentá nuevamente.');
+  }
+  let data;
+  try { data = await response.json(); }
+  catch { throw historyError('ITAD devolvió un historial con un formato inesperado.'); }
+  const records = normalizeHistory(data);
+  const summary = {
+    records,
+    lowestPrice: records.length ? records.reduce((lowest, record) => Math.min(lowest, record.price), Infinity) : null,
+    firstRecordedAt: records.length ? records.at(-1).recordedAt : null,
+  };
+  if (cache.size >= MAX_CACHED_GAMES) cache.delete(cache.keys().next().value);
+  cache.set(gameId, { ...summary, expiresAt: Date.now() + CACHE_DURATION });
+  return summary;
+}
+
+export async function getPriceHistory(gameId, limit = 50, offset = 0) {
+  if (!process.env.ITAD_API_KEY) throw historyError('Falta configurar la consulta del historial de ITAD.', 503);
+  let history = cache.get(gameId);
+  if (!history || history.expiresAt <= Date.now()) {
+    if (!pending.has(gameId)) {
+      pending.set(gameId, loadHistory(gameId).finally(() => pending.delete(gameId)));
+    }
+    history = await pending.get(gameId);
+  }
+  const records = history.records.slice(offset, offset + limit);
+  return {
+    records, hasMore: offset + records.length < history.records.length,
+    nextOffset: offset + records.length, lowestPrice: history.lowestPrice,
+    firstRecordedAt: history.firstRecordedAt, source: 'itad', periodMonths: 3,
+    ...(offset === 0 ? { chartRecords: history.records } : {}),
+  };
 }

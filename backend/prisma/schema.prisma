@@ -15,9 +15,27 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
+  emailVerifiedAt DateTime?
+  emailVerificationHash String? @unique
+  emailVerificationExpiresAt DateTime?
+
   favorites   Favorite[]
   priceAlerts PriceAlert[]
   notifications Notification[]
+  refreshSessions RefreshSession[]
+}
+
+model RefreshSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   @unique
+  remember  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Game {
@@ -27,7 +45,6 @@ model Game {
 
   favorites    Favorite[]
   priceAlerts  PriceAlert[]
-  priceRecords PriceRecord[]
 }
 
 model Store {
@@ -36,7 +53,6 @@ model Store {
   name        String?
   createdAt   DateTime @default(now())
 
-  priceRecords PriceRecord[]
 }
 
 model Favorite {
@@ -63,6 +79,7 @@ model PriceAlert {
   currency    String
   createdAt   DateTime @default(now())
   notified    Boolean @default(false)
+  emailEnabled Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
@@ -83,23 +100,15 @@ model Notification {
   storeName String
   createdAt DateTime @default(now())
   readAt DateTime?
+  emailStatus String @default("none")
+  emailPayload Json?
+  emailAttempts Int @default(0)
+  emailNextAttemptAt DateTime?
+  emailClaimedAt DateTime?
+  emailSentAt DateTime?
+  emailProviderId String?
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
-}
-
-model PriceRecord {
-  id         Int      @id @default(autoincrement())
-  gameId     Int
-  storeId    Int
-  price      Decimal  @db.Decimal(12, 2)
-  currency   String
-  recordedAt DateTime @default(now())
-
-  game  Game  @relation(fields: [gameId], references: [id])
-  store Store @relation(fields: [storeId], references: [id])
-
-  @@index([gameId, recordedAt])
-  @@index([gameId, storeId, recordedAt])
-  @@index([storeId])
+  @@index([emailStatus, emailNextAttemptAt])
 }

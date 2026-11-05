@@ -7,7 +7,9 @@ async function request(path, { body, token } = {}) {
   try {
     response = await fetch(`${AUTH_ENDPOINT}${path}`, {
       method: body ? 'POST' : 'GET',
+      credentials: 'include',
       headers: {
+        'X-Aura-Request': '1',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
@@ -17,6 +19,7 @@ async function request(path, { body, token } = {}) {
     throw new Error('No pudimos conectarnos con el servidor. Intentá nuevamente.');
   }
 
+  if (response.status === 204) return;
   let data;
   try {
     data = await response.json();
@@ -38,6 +41,9 @@ async function request(path, { body, token } = {}) {
 
 export const registerUser = (form) => request('/register', { body: form });
 export const loginUser = (form) => request('/login', { body: form });
+export const refreshUser = () => request('/refresh', { body: {} });
+export const logoutUser = () => request('/logout', { body: {} });
+export const verifyEmailAddress = token => request('/verify-email', { body: { token } });
 export const getCurrentUser = (token) => request('/me', { token });
 
 export function validateCredentials(form, isRegister = false) {

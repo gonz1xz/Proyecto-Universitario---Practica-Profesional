@@ -1,9 +1,10 @@
 import { API_BASE_URL } from './apiBaseUrl.js';
+import { authenticatedFetch } from './authSession.js';
 
 export async function notificationRequest(token, path = '', options = {}) {
   let response;
   try {
-    response = await fetch(API_BASE_URL + '/notifications' + path, { ...options, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, ...(options.body ? { body: JSON.stringify(options.body) } : {}) });
+    response = await authenticatedFetch(API_BASE_URL + '/notifications' + path, { ...options, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, ...(options.body ? { body: JSON.stringify(options.body) } : {}) }, token);
   } catch (error) {
     if (options.signal?.aborted) throw error;
     throw new Error('No pudimos conectarnos al servicio de notificaciones.');

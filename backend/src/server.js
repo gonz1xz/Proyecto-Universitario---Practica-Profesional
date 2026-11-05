@@ -1,6 +1,7 @@
 import app from './app.js';
 import dotenv from 'dotenv';
 import { startPriceNotifications } from './services/priceNotifications.js';
+import { startEmailDeliveries } from './services/emailDeliveries.js';
 
 dotenv.config();
 
@@ -29,5 +30,6 @@ app.listen(port, '0.0.0.0', error => {
     return;
   }
   if (process.env.ENABLE_PRICE_CHECKS !== 'false') startPriceNotifications();
+  startEmailDeliveries();
   console.log(`Servidor iniciado en el puerto ${port}.`);
 });

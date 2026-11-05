@@ -1,5 +1,4 @@
 import prisma from '../prisma.js';
-import { tryRecordPriceHistory } from './priceHistory.js';
 
 // Se consideran únicamente importes USD válidos; cero incluye los regalos.
 export function selectDeals(deals) {
@@ -32,7 +31,6 @@ export async function checkPriceNotifications() {
         const item = prices.find(item => item.id === game.itadGameId);
         // Una respuesta incompleta no se interpreta como una oferta terminada.
         if (!Array.isArray(item?.deals)) continue;
-        await tryRecordPriceHistory(game.itadGameId, item.deals);
         const { cheapest, sale } = selectDeals(item.deals);
         let gameTitle;
         for (const favorite of game.favorites) {
@@ -55,7 +53,17 @@ export async function checkPriceNotifications() {
               const updated = event.type === 'sale'
                 ? await tx.favorite.updateMany({ where: { id: favorite.id, saleNotified: false }, data: { saleNotified: true } })
                 : await tx.priceAlert.updateMany({ where: { id: alert.id, isActive: true, notified: false, targetPrice: alert.targetPrice }, data: { notified: true } });
-              if (updated.count) await tx.notification.create({ data: { userId: favorite.userId, itadGameId: game.itadGameId, gameTitle, type: event.type, price: event.deal.price.amount, currency: 'USD', storeName: event.deal.shop.name } });
+              if (updated.count) {
+                const current = event.type === 'target' && await tx.priceAlert.findUnique({
+                  where: { id: alert.id }, include: { user: { select: { emailVerifiedAt: true } } },
+                });
+                const sendByEmail = current?.emailEnabled && current.user.emailVerifiedAt;
+                await tx.notification.create({ data: {
+                  userId: favorite.userId, itadGameId: game.itadGameId, gameTitle, type: event.type,
+                  price: event.deal.price.amount, currency: 'USD', storeName: event.deal.shop.name,
+                  emailStatus: sendByEmail ? 'pending' : 'none',
+                } });
+              }
             }
           });
         }

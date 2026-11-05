@@ -1,17 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomInt, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import prisma from '../src/prisma.js';
 
-test('eliminación múltiple de favoritos: usuario, alertas e historial', async () => {
+test('eliminación múltiple de favoritos: usuario, alertas y juegos compartidos', async () => {
   const suffix = randomUUID();
   const emails = [0, 1].map(index => `selection-${index}-${suffix}@example.com`);
   const gameIds = [randomUUID(), randomUUID(), randomUUID()];
   const users = [];
   const games = [];
-  let store;
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}/api/favorites`;
@@ -26,8 +25,6 @@ test('eliminación múltiple de favoritos: usuario, alertas e historial', async 
       await prisma.favorite.create({ data: { userId, gameId } });
       await prisma.priceAlert.create({ data: { userId, gameId, targetPrice: 10, currency: 'USD' } });
     }
-    store = await prisma.store.create({ data: { itadStoreId: String(randomInt(1000000000, 1900000000)), name: 'Prueba selección' } });
-    await prisma.priceRecord.create({ data: { gameId: games[0].id, storeId: store.id, price: 8, currency: 'USD' } });
     const token = jwt.sign({ userId: users[0].id, type: 'access' }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
     assert.equal((await remove('', { itadGameIds: gameIds })).status, 401);
     for (const itadGameIds of [[], 'invalid', ['invalid'], [null], Array(101).fill(gameIds[0])]) {
@@ -42,7 +39,7 @@ test('eliminación múltiple de favoritos: usuario, alertas e historial', async 
     assert.equal(await prisma.priceAlert.count({ where: { userId: users[0].id } }), 0);
     assert.equal(await prisma.favorite.count({ where: { userId: users[1].id } }), 2);
     assert.equal(await prisma.priceAlert.count({ where: { userId: users[1].id } }), 2);
-    assert.equal(await prisma.priceRecord.count({ where: { gameId: games[0].id } }), 1);
+    assert.ok(await prisma.game.findUnique({ where: { id: games[0].id } }), 'se conserva el juego compartido');
     assert.equal((await remove(token, { itadGameIds: gameIds })).data.removedCount, 0, 'repetir es seguro');
   } finally {
     await new Promise(resolve => server.close(resolve));
@@ -51,9 +48,7 @@ test('eliminación múltiple de favoritos: usuario, alertas e historial', async 
       await prisma.priceAlert.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.favorite.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.user.deleteMany({ where: { email: { in: emails } } });
-      await prisma.priceRecord.deleteMany({ where: { game: { itadGameId: { in: gameIds } } } });
       await prisma.game.deleteMany({ where: { itadGameId: { in: gameIds } } });
-      if (store) await prisma.store.deleteMany({ where: { id: store.id, priceRecords: { none: {} } } });
     } finally { await prisma.$disconnect(); }
   }
 });

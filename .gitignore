@@ -4,6 +4,7 @@ dist/
 .env.*
 !.env.example
 coverage/
+/docs/PriceRecord_backup_*.json
 *.log
 
 # Cuentas de prueba locales

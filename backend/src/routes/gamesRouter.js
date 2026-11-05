@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import prisma from '../prisma.js';
-import { tryRecordPriceHistory } from '../services/priceHistory.js';
+import { getPriceHistory } from '../services/priceHistory.js';
 import { getGameDetails } from '../services/gameDetails.js';
 
 
@@ -264,8 +263,6 @@ router.get('/:id/prices', async (req, res) => {
     if (!Array.isArray(item?.deals)) {
       return res.status(502).json({ error: 'La fuente devolvió precios con un formato inesperado.' });
     }
-    const historySaved = await tryRecordPriceHistory(gameId, item.deals);
-    res.set('X-Price-History-Saved', String(historySaved));
     res.json(game);
   } catch (error) {
     console.error('Error al obtener los precios del juego:', error);
@@ -278,7 +275,7 @@ router.get('/:id/prices', async (req, res) => {
 
 
 
-// Historial propio: solo precios observados, sin consultar datos antiguos a ITAD.
+// Historial de ITAD: la clave permanece en el backend.
 router.get('/:id/history', async (req, res) => {
   const gameId = req.params.id.toLowerCase();
   const limitValue = req.query.limit ?? '50';
@@ -291,23 +288,9 @@ router.get('/:id/history', async (req, res) => {
     return res.status(400).json({ error: 'El identificador o la paginación del historial no son válidos.' });
   }
   try {
-    const where = { game: { itadGameId: gameId }, currency: 'USD' };
-    const [records, summary] = await prisma.$transaction([
-      prisma.priceRecord.findMany({ where, include: { store: true }, orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }], take: limit + 1, skip: offset }),
-      prisma.priceRecord.aggregate({ where, _min: { price: true, recordedAt: true } }),
-    ]);
-    const hasMore = records.length > limit;
-    res.json({
-      records: records.slice(0, limit).map(record => ({
-        id: record.id, price: Number(record.price), currency: record.currency, recordedAt: record.recordedAt,
-        store: { id: record.store.itadStoreId, name: record.store.name || 'Tienda ' + record.store.itadStoreId },
-      })),
-      hasMore, nextOffset: offset + Math.min(records.length, limit),
-      lowestPrice: summary._min.price === null ? null : Number(summary._min.price),
-      firstRecordedAt: summary._min.recordedAt,
-    });
-  } catch {
-    res.status(500).json({ error: 'No se pudo consultar el historial de precios. Intentá nuevamente.' });
+    res.json(await getPriceHistory(gameId, limit, offset));
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || 'No se pudo consultar el historial de ITAD. Intentá nuevamente.' });
   }
 });
 

@@ -45,7 +45,7 @@ function HomeSection({ id, icon: Icon, title, description, loadItems, emptyMessa
         {status === 'loading' && <p className="status-panel">Cargando juegos...</p>}
         {status === 'error' && (
           <div className="status-panel">
-            <p role="alert">{error}</p>
+            <p role="alert" className="text-error">{error}</p>
             <button type="button" onClick={() => setRetry(current => current + 1)} className="mt-3 text-primary underline">Reintentar</button>
           </div>
         )}

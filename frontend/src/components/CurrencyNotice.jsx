@@ -4,7 +4,7 @@ export function CurrencyNotice() {
   const { currency, status, exchange, retryRate } = useCurrency();
   if (currency !== 'ARS') return null;
   return (
-    <div className="border-b border-text/10 bg-surface px-5 py-2 text-center text-xs leading-5 text-muted" role="status">
+    <div className={`border-b bg-surface px-5 py-2 text-center text-xs leading-5 ${status === 'error' ? 'border-error/40 text-error' : 'border-text/10 text-muted'}`} role={status === 'error' ? 'alert' : 'status'}>
       {status === 'error' ? <>
         No se pudo obtener la cotización. Mostramos los precios en USD.
         <button type="button" onClick={retryRate} className="ml-2 text-primary hover:underline">Reintentar</button>

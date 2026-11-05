@@ -1,14 +1,15 @@
 import { API_BASE_URL } from './apiBaseUrl.js';
+import { authenticatedFetch } from './authSession.js';
 
 const ENDPOINT = API_BASE_URL + '/favorites';
 
 async function request(path, token, { method = 'GET', body, signal } = {}) {
   let response;
   try {
-    response = await fetch(ENDPOINT + path, { method, signal, headers: {
+    response = await authenticatedFetch(ENDPOINT + path, { method, signal, headers: {
       Authorization: 'Bearer ' + token,
       ...(body ? { 'Content-Type': 'application/json' } : {}),
-    }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    }, ...(body ? { body: JSON.stringify(body) } : {}) }, token);
   } catch (error) {
     if (signal?.aborted) throw error;
     throw new Error('No pudimos conectarnos para actualizar tus favoritos.');

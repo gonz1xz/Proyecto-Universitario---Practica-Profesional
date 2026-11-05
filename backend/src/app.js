@@ -5,6 +5,7 @@ import authRouter from './routes/authRouter.js';
 import favoritesRouter from './routes/favoritesRouter.js';
 import notificationsRouter from './routes/notificationsRouter.js';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 // Global Variables
 const app = express();
@@ -22,11 +23,12 @@ app.use(cors({
     callback(error);
   },
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['X-Price-History-Saved'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Aura-Request'],
 }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 // Comprobar el proceso no requiere despertar ni consultar PostgreSQL.

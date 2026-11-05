@@ -9,6 +9,7 @@
   --color-surface: var(--surface);
   --color-text: var(--text);
   --color-muted: var(--muted);
+  --color-error: var(--error);
 }
 
 /* Paleta compartida: cambiar estos valores actualiza todas las pantallas. */
@@ -19,6 +20,7 @@
   --accent: #a7e8cf;
   --text: #f3f7fc;
   --muted: #b7c6d9;
+  --error: #ff9b9b;
   --discount: #ffd09a;
   --heading-font: "Trebuchet MS", "Segoe UI", sans-serif;
   --line: #ffffff1a;
@@ -42,6 +44,7 @@
   --accent: #23694f;
   --text: #142238;
   --muted: #50627a;
+  --error: #b42318;
   --discount: #99510c;
   --line: #14223824;
   --button-hover: #10496d;
@@ -77,6 +80,8 @@ h1, h2, h3 { font-family: var(--heading-font); overflow-wrap: anywhere; }
 /* El foco de los campos se dibuja una sola vez, sobre su contenedor. */
 .auth-control:focus-within, .search-control:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; border-color: var(--primary); }
 .auth-control input:focus-visible, .search-control input:focus-visible { outline: none; }
+.auth-control.auth-control-error, .search-control.search-control-error { border-color: var(--error); }
+.auth-control.auth-control-error:focus-within, .search-control.search-control-error:focus-within { outline-color: var(--error); }
 ::selection { background: var(--primary); color: var(--background); }
 
 /* Estructura general y navegación. */
@@ -217,7 +222,7 @@ h1, h2, h3 { font-family: var(--heading-font); overflow-wrap: anywhere; }
 .game-description { margin-top: 12px; color: var(--muted); font-size: 15px; line-height: 1.85; white-space: pre-line; }
 .game-screenshots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
 .game-screenshots img { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; border-radius: 9px; background: var(--artwork-background); }
-.screenshot-missing { display: grid; place-items: center; gap: 8px; padding: 20px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font-size: 12px; }
+.screenshot-missing { display: grid; place-items: center; gap: 8px; padding: 20px; border: 1px solid var(--error); border-radius: 9px; color: var(--error); font-size: 12px; }
 .game-info-source { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.7; }
 .price-view-switch { display: flex; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
 .price-view-switch button { min-height: 44px; padding: 10px 14px; border-radius: 9px; font-size: 14px; color: var(--muted); }
@@ -304,3 +309,21 @@ h1, h2, h3 { font-family: var(--heading-font); overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Historial: un gráfico por tienda, con los mismos colores de ambos temas. */
+.price-chart { margin-top: 24px; padding: 18px 0 12px; border-block: 1px solid var(--line); }
+.price-chart-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.price-chart-heading h4 { font-size: 16px; font-weight: 600; }
+.price-chart-heading label { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); }
+.price-chart-heading select { max-width: 220px; min-height: 40px; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; background: var(--background); color: var(--text); }
+.price-chart-reading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.price-chart-reading strong { color: var(--accent); font-size: 24px; font-variant-numeric: tabular-nums; }
+.price-chart-reading span { color: var(--muted); font-size: 13px; }
+.price-chart svg { display: block; width: 100%; margin-top: 12px; touch-action: pan-y; }
+.price-chart-grid line { stroke: var(--line); stroke-dasharray: 3 5; }
+.price-chart-grid text, .price-chart-axis { fill: var(--muted); font-size: 11px; }
+.price-chart-line { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.price-chart-cursor { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
+.price-chart-point { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.price-chart-range { display: block; width: calc(100% - 74px); min-height: 30px; margin-left: 58px; accent-color: var(--primary); cursor: pointer; }
+.price-chart-note { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.6; }

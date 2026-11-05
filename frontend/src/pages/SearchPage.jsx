@@ -93,12 +93,12 @@ export const SearchPage = () => {
         <CatalogSidebar filters={sidebarFilters} isSearch={Boolean(query)} onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))} onApply={() => setFilters({ ...sidebarFilters })} onReset={resetFilters} />
         <section aria-label="Juegos" aria-live="polite" aria-busy={status === 'loading' || loadingMore}>
           {status === 'loading' && <p className="py-12 text-center text-sm text-muted">Cargando juegos y precios...</p>}
-          {status === 'error' && <div className="rounded-lg border border-text/10 bg-surface p-6"><p className="text-sm text-primary" role="alert">{errorMessage}</p><button type="button" onClick={() => setRetry((current) => current + 1)} className="mt-4 text-sm font-semibold text-primary hover:underline">Reintentar</button></div>}
+          {status === 'error' && <div className="rounded-lg border border-text/10 bg-surface p-6"><p className="text-sm text-error" role="alert">{errorMessage}</p><button type="button" onClick={() => setRetry((current) => current + 1)} className="mt-4 text-sm font-semibold text-primary hover:underline">Reintentar</button></div>}
           {status === 'success' && <>
             {ranking && <div className="mb-5 rounded-lg border border-text/10 bg-surface p-4 text-sm leading-6 text-muted"><p>{rankingDescriptions[filters.sort]}</p><p>Los filtros se aplican a los juegos cargados de este ranking. Cargá más para revisar los siguientes puestos.</p></div>}
             <p className="mb-4 text-sm text-muted">{visibleGames.length} juegos{query ? ' en los resultados de búsqueda' : ' cargados'}</p>
             {visibleGames.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{visibleGames.map((game) => <GameCard key={game.id} game={game} onShowPrices={setSelectedGame} onShowInfo={setInfoGame} />)}</div> : <div className="rounded-lg border border-text/10 bg-surface p-8 text-center"><p className="text-sm text-muted">No hay juegos que coincidan con estos filtros{query ? ' y esta búsqueda' : ''}.</p><button type="button" onClick={resetFilters} className="mt-4 text-sm font-medium text-primary hover:underline">Limpiar filtros</button></div>}
-            {errorMessage && <p className="mt-5 text-sm text-primary" role="alert">{errorMessage}</p>}
+            {errorMessage && <p className="mt-5 text-sm text-error" role="alert">{errorMessage}</p>}
             {!query && pagination.hasMore && <div className="mt-8 text-center"><button type="button" disabled={loadingMore} onClick={loadMore} className="rounded-md border border-primary px-6 py-2.5 text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-60">{loadingMore ? 'Cargando...' : 'Cargar más juegos'}</button></div>}
           </>}
         </section>

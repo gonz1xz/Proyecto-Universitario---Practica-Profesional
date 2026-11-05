@@ -93,7 +93,7 @@ export const getGamePrices = async (gameId, signal) => {
     throw new Error('La respuesta de precios no tiene el formato esperado.');
   }
 
-  return { deals: game.deals, historySaved: response.headers.get('X-Price-History-Saved') !== 'false' };
+  return { deals: game.deals };
 };
 
 export async function getPriceHistory(gameId, offset = 0, signal) {
@@ -108,7 +108,7 @@ export async function getPriceHistory(gameId, offset = 0, signal) {
   try { data = await response.json(); }
   catch { throw new Error('El servidor devolvió un historial inesperado.'); }
   if (!response.ok) throw new Error(data.error || 'No se pudo consultar el historial.');
-  if (!Array.isArray(data.records) || typeof data.hasMore !== 'boolean' || !Number.isSafeInteger(data.nextOffset)) {
+  if (!Array.isArray(data.records) || (data.chartRecords !== undefined && !Array.isArray(data.chartRecords)) || typeof data.hasMore !== 'boolean' || !Number.isSafeInteger(data.nextOffset)) {
     throw new Error('El historial recibido no tiene el formato esperado.');
   }
   return data;

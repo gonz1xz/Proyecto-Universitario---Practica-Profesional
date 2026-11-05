@@ -11,7 +11,6 @@ export const PriceModal = ({ game, onClose }) => {
   const [status, setStatus] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [view, setView] = useState('current');
-  const [historySaved, setHistorySaved] = useState(true);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -26,14 +25,12 @@ export const PriceModal = ({ game, onClose }) => {
     setStatus('loading');
     setErrorMessage('');
     setView('current');
-    setHistorySaved(true);
 
     const loadPrices = async () => {
       try {
         const foundDeals = await getGamePrices(game.id, controller.signal);
         if (controller.signal.aborted) return;
         setDeals(foundDeals.deals);
-        setHistorySaved(foundDeals.historySaved);
         setStatus(foundDeals.deals.length > 0 ? 'success' : 'empty');
       } catch (error) {
         if (error.name !== 'AbortError') {
@@ -78,10 +75,9 @@ export const PriceModal = ({ game, onClose }) => {
 
         <div className="price-view-switch" aria-label="Vista de precios">
           <button type="button" aria-pressed={view === 'current'} onClick={() => setView('current')}>Precios actuales</button>
-          <button type="button" aria-pressed={view === 'history'} disabled={status === 'loading'} onClick={() => setView('history')}>Historial</button>
+          <button type="button" aria-pressed={view === 'history'} onClick={() => setView('history')}>Historial</button>
         </div>
         <div className="overflow-y-auto px-4 py-4 sm:px-7 sm:py-5" aria-live="polite">
-          {!historySaved && <p className="mb-4 text-sm text-primary" role="status">Los precios actuales están disponibles, pero no pudimos guardarlos en el historial esta vez.</p>}
           {view === 'history' ? <PriceHistory key={game.id} gameId={game.id} /> : <>
           {status === 'loading' && (
             <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-muted">
@@ -91,7 +87,7 @@ export const PriceModal = ({ game, onClose }) => {
           )}
 
           {status === 'empty' && <p className="py-16 text-center text-sm text-muted">No hay precios disponibles para este juego.</p>}
-          {status === 'error' && <p className="py-16 text-center text-sm text-primary">{errorMessage}</p>}
+          {status === 'error' && <p role="alert" className="py-16 text-center text-sm text-error">{errorMessage}</p>}
 
           {status === 'success' && (
             <ul className="grid gap-2.5">

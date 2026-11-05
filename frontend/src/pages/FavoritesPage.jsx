@@ -102,7 +102,7 @@ function FavoritesList({ token }) {
       </div>
       {message && <p role="status" className="mb-5 text-sm text-accent">{message}</p>}
       {(favoritesStatus === 'loading' || favoritesStatus === 'idle' || status === 'loading') && favoritesStatus !== 'error' && <p className="py-10 text-sm text-muted" role="status">Cargando favoritos...</p>}
-      {(favoritesStatus === 'error' || error) && <div className="my-5 rounded-lg border border-text/10 bg-surface p-6"><p role="alert" className="text-sm text-primary">{favoritesError || error}</p><button type="button" onClick={() => { if (favoritesStatus === 'error') reload(); else if (status === 'success') loadMore(); else setRetry(current => current + 1); }} className="mt-3 text-sm text-primary underline">Reintentar</button></div>}
+      {(favoritesStatus === 'error' || error) && <div className="my-5 rounded-lg border border-text/10 bg-surface p-6"><p role="alert" className="text-sm text-error">{favoritesError || error}</p><button type="button" onClick={() => { if (favoritesStatus === 'error') reload(); else if (status === 'success') loadMore(); else setRetry(current => current + 1); }} className="mt-3 text-sm text-primary underline">Reintentar</button></div>}
       {favoritesStatus === 'success' && status === 'success' && <>
         {visibleGames.some(game => game.detailsUnavailable) && <p className="mt-5 text-sm text-muted" role="status">No pudimos consultar algunos títulos. Tus favoritos siguen guardados. <button type="button" onClick={() => setRetry(current => current + 1)} className="text-primary underline">Reintentar portadas</button></p>}
         {visibleGames.length ? (
@@ -126,7 +126,7 @@ function FavoritesList({ token }) {
             <button type="button" disabled={removing} onClick={() => { setSelectedIds([]); setSelectionError(''); }} className="selection-cancel">Cancelar</button>
             <button type="button" disabled={removing || loadingMore} onClick={confirmRemoval} className="button button-primary"><Trash2 size={17} aria-hidden="true" />{removing ? 'Eliminando...' : 'Eliminar de favoritos'}</button>
           </div>
-          {selectionError && <p role="alert" className="mt-3 text-sm text-primary">{selectionError}</p>}
+          {selectionError && <p role="alert" className="mt-3 text-sm text-error">{selectionError}</p>}
         </section>
       )}
       {selectedGame && <PriceModal game={selectedGame} onClose={() => setSelectedGame(null)} />}

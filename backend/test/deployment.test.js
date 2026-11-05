@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import app from '../src/app.js';
 import { API_BASE_URL } from '../../frontend/src/services/apiBaseUrl.js';
 
-test('salud y CORS para el frontend publicado, sin cookies ni comodines', async () => {
+test('salud y CORS para el frontend publicado con cookies y orígenes exactos', async () => {
   const previous = process.env.CORS_ORIGIN;
   process.env.CORS_ORIGIN = 'https://auraprices.example/,https://preview.example';
   const server = app.listen(0, '127.0.0.1');
@@ -16,14 +16,14 @@ test('salud y CORS para el frontend publicado, sin cookies ni comodines', async 
     const allowed = await fetch(base + '/api/health', { headers: { Origin: 'https://auraprices.example' } });
     assert.equal(allowed.status, 200);
     assert.equal(allowed.headers.get('Access-Control-Allow-Origin'), 'https://auraprices.example');
-    assert.equal(allowed.headers.get('Access-Control-Allow-Credentials'), null);
-    assert.match(allowed.headers.get('Access-Control-Expose-Headers'), /X-Price-History-Saved/);
+    assert.equal(allowed.headers.get('Access-Control-Allow-Credentials'), 'true');
     const preflight = await fetch(base + '/api/favorites', { method: 'OPTIONS', headers: {
       Origin: 'https://preview.example', 'Access-Control-Request-Method': 'DELETE', 'Access-Control-Request-Headers': 'authorization,content-type',
     } });
     assert.equal(preflight.status, 204);
     assert.match(preflight.headers.get('Access-Control-Allow-Methods'), /DELETE/);
     assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /Authorization/);
+    assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /X-Aura-Request/);
     const forbidden = await fetch(base + '/api/health', { headers: { Origin: 'https://other.example' } });
     assert.equal(forbidden.status, 403);
     assert.equal(forbidden.headers.get('Access-Control-Allow-Origin'), null);
