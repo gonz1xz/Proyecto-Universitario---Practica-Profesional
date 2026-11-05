@@ -25,7 +25,7 @@ export const GameCard = ({ game, onShowPrices, onShowInfo, onSetAlert, favoriteS
             </div>
             <span className="store-name">{game.deal.shop.name}</span>
           </div>
-        ) : <p className="my-4 text-sm text-muted">Sin precio disponible</p>}
+        ) : <p className={`my-4 text-sm ${game.pricesUnavailable ? 'text-error' : 'text-muted'}`}>{game.pricesUnavailable ? 'No se pudo consultar el precio' : 'Sin precio disponible'}</p>}
         <button className="button button-primary w-full justify-between" type="button" onClick={() => onShowPrices(game)}>
           Comparar precios <ArrowRight size={17} aria-hidden="true" />
         </button>

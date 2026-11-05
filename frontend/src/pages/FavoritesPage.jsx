@@ -105,6 +105,7 @@ function FavoritesList({ token }) {
       {(favoritesStatus === 'error' || error) && <div className="my-5 rounded-lg border border-text/10 bg-surface p-6"><p role="alert" className="text-sm text-error">{favoritesError || error}</p><button type="button" onClick={() => { if (favoritesStatus === 'error') reload(); else if (status === 'success') loadMore(); else setRetry(current => current + 1); }} className="mt-3 text-sm text-primary underline">Reintentar</button></div>}
       {favoritesStatus === 'success' && status === 'success' && <>
         {visibleGames.some(game => game.detailsUnavailable) && <p className="mt-5 text-sm text-muted" role="status">No pudimos consultar algunos títulos. Tus favoritos siguen guardados. <button type="button" onClick={() => setRetry(current => current + 1)} className="text-primary underline">Reintentar portadas</button></p>}
+        {visibleGames.some(game => game.pricesUnavailable) && <p className="mt-5 text-sm text-error" role="alert">No pudimos cargar los precios. Tus favoritos siguen guardados. <button type="button" onClick={() => setRetry(current => current + 1)} className="text-primary underline">Reintentar precios</button></p>}
         {visibleGames.length ? (
           <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {visibleGames.map(game => <GameCard key={game.id} game={game} onShowPrices={setSelectedGame} onSetAlert={setAlertGame} favoriteSelected={!selectedIds.includes(game.id)} onToggleFavorite={toggleSelection} favoriteDisabled={removing} />)}

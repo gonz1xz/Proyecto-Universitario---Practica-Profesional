@@ -26,6 +26,22 @@ async function getGameInfo(id) {
   return info;
 }
 
+async function getFavoritePrices(ids) {
+  if (!ids.length) return new Map();
+  const url = new URL('https://api.isthereanydeal.com/games/prices/v3');
+  url.searchParams.set('country', 'US');
+  const response = await fetch(url, {
+    method: 'POST', headers: { 'ITAD-API-Key': process.env.ITAD_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(ids), signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error('No se pudieron consultar los precios de favoritos.');
+  const prices = await response.json();
+  if (!Array.isArray(prices) || !prices.every(item => item && typeof item.id === 'string' && Array.isArray(item.deals))) {
+    throw new Error('La fuente devolvió precios inesperados.');
+  }
+  return new Map(prices.map(item => [item.id, item.deals]));
+}
+
 router.get('/', async (req, res) => {
   const includeDetails = req.query.includeDetails === 'true';
   if (req.query.includeDetails !== undefined && !['true', 'false'].includes(req.query.includeDetails)) {
@@ -46,11 +62,19 @@ router.get('/', async (req, res) => {
     });
     if (!includeDetails) return res.json({ favorites: favorites.map(publicFavorite) });
     // Un fallo de ITAD no oculta los juegos guardados ni impide quitarlos.
-    const games = await Promise.all(favorites.map(async favorite => {
+    const [details, prices] = await Promise.all([Promise.all(favorites.map(async favorite => {
       const id = favorite.game.itadGameId;
       try { return { ...await getGameInfo(id), savedAt: favorite.createdAt }; }
       catch { return { id, title: 'Juego guardado', assets: null, detailsUnavailable: true, savedAt: favorite.createdAt }; }
-    }));
+    })), getFavoritePrices(favorites.map(favorite => favorite.game.itadGameId)).catch(() => null)]);
+    const games = details.map(game => {
+      const deals = (prices?.get(game.id) || []).filter(deal =>
+        deal?.price?.currency === 'USD' && Number.isFinite(deal.price.amount) && deal.price.amount >= 0 &&
+        typeof deal.shop?.name === 'string' && deal.shop.name.trim() && Number.isFinite(deal.cut)
+      );
+      const deal = deals.reduce((best, current) => !best || current.price.amount < best.price.amount ? current : best, null);
+      return { ...game, deal, pricesUnavailable: prices === null };
+    });
     const total = await prisma.favorite.count({ where: { userId: req.userId } });
     res.json({ games, total, hasMore: offset + games.length < total, nextOffset: offset + games.length });
   } catch { res.status(500).json({ message: 'No se pudieron cargar los favoritos.' }); }

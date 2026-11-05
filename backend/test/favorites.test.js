@@ -31,7 +31,19 @@ test('favoritos persistentes y aislados por usuario', async () => {
     assert.equal((await request('/invalido', { token: tokenA, method: 'DELETE' })).status, 400);
     assert.equal((await request('?includeDetails=true&limit=25', { token: tokenA })).status, 400);
     assert.equal((await request('?includeDetails=invalid', { token: tokenA })).status, 400);
-    globalThis.fetch = async url => {
+    let priceCalls = 0;
+    globalThis.fetch = async (url, options) => {
+      if (url.pathname === '/games/prices/v3') {
+        priceCalls++;
+        assert.equal(url.searchParams.get('country'), 'US');
+        assert.equal(options.method, 'POST');
+        return Response.json(JSON.parse(options.body).reverse().map(id => ({ id, deals: id === secondGameId ? [
+          { price: { amount: 20, currency: 'USD' }, cut: 0, shop: { name: 'Tienda cara' } },
+          { price: { amount: -1, currency: 'USD' }, cut: 0, shop: { name: 'Precio inválido' } },
+          { price: { amount: 0, currency: 'EUR' }, cut: 0, shop: { name: 'Otra moneda' } },
+          { price: { amount: 0, currency: 'USD' }, cut: 100, shop: { name: 'Tienda gratis' } },
+        ] : [] })));
+      }
       assert.equal(url.pathname, '/games/info/v2');
       const id = url.searchParams.get('id');
       return Response.json({ id, title: 'Juego de prueba', assets: { banner600: 'https://example.com/game.jpg' } });
@@ -55,9 +67,28 @@ test('favoritos persistentes y aislados por usuario', async () => {
     assert.equal(detailPage.data.games[0].title, 'Juego de prueba');
     assert.equal(detailPage.data.total, 2);
     assert.equal(detailPage.data.hasMore, true);
+    assert.equal(detailPage.data.games[0].deal.price.amount, 0, 'conservar un precio gratuito válido');
+    assert.equal(detailPage.data.games[0].deal.shop.name, 'Tienda gratis');
+    assert.equal(detailPage.data.games[0].pricesUnavailable, false);
     const nextPage = await request('?includeDetails=true&limit=1&offset=1', { token: tokenA });
     assert.equal(nextPage.data.hasMore, false);
     assert.notEqual(nextPage.data.games[0].id, detailPage.data.games[0].id);
+    assert.equal(nextPage.data.games[0].deal, null);
+    assert.equal(nextPage.data.games[0].pricesUnavailable, false, 'sin ofertas no es una caída del proveedor');
+    priceCalls = 0;
+    const both = await request('?includeDetails=true', { token: tokenA });
+    assert.equal(priceCalls, 1, 'consultar los precios de la página en un único lote');
+    assert.equal(both.data.games.find(game => game.id === secondGameId).deal.price.amount, 0, 'relacionar por ID aunque ITAD devuelva otro orden');
+    globalThis.fetch = async url => url.pathname === '/games/prices/v3'
+      ? Response.json({}, { status: 429 })
+      : Response.json({ id: url.searchParams.get('id'), title: 'Juego de prueba' });
+    const failedPrices = await request('?includeDetails=true', { token: tokenA });
+    assert.equal(failedPrices.status, 200);
+    assert.ok(failedPrices.data.games.every(game => game.pricesUnavailable && !game.detailsUnavailable));
+    globalThis.fetch = async url => url.pathname === '/games/prices/v3'
+      ? Response.json({ unexpected: true })
+      : Response.json({ id: url.searchParams.get('id'), title: 'Juego de prueba' });
+    assert.ok((await request('?includeDetails=true', { token: tokenA })).data.games.every(game => game.pricesUnavailable));
     globalThis.fetch = async () => { throw new Error('ITAD no disponible'); };
     const unavailable = await request('?includeDetails=true', { token: tokenA });
     assert.equal(unavailable.status, 200);
