@@ -13,7 +13,7 @@ AuraPrices es un proyecto universitario de práctica profesional. Combina una in
 - Registro e inicio de sesión con bcrypt, JWT y renovación automática mediante refresh token.
 - Favoritos personales y selección múltiple para eliminarlos.
 - Alertas por precio objetivo, buzón interno y avisos opcionales por mail con correo verificado.
-- Historial de ITAD de los últimos tres meses, con gráfico por tienda y tabla de cambios.
+- Historial de ITAD del último mes (30 días), con gráfico de línea con picos por tienda y tabla de cambios.
 - Visualización en USD o ARS y temas claro y oscuro.
 
 Los rankings corresponden a los datos de IsThereAnyDeal: no representan un ranking global de ventas.
@@ -182,11 +182,11 @@ Las pruebas pueden crear y eliminar datos: usá una base local de desarrollo o u
 
 ## Historial y notificaciones
 
-El backend consulta `GET /games/history/v2` de ITAD y devuelve los cambios de los últimos tres meses por tienda, en USD y para la región US. Mantiene la clave en el servidor y usa una caché en memoria de 15 minutos y hasta 100 juegos; las consultas simultáneas del mismo juego comparten la solicitud. La interfaz identifica a IsThereAnyDeal como fuente. [Documentación de ITAD](https://docs.isthereanydeal.com/).
+El backend consulta `GET /games/history/v2` de ITAD con `since` para los últimos 30 días y devuelve los cambios del último mes por tienda, en USD y para la región US. Filtra nuevamente la ventana al responder, incluso si utiliza la caché, y calcula el mínimo solo con esos registros. Mantiene la clave en el servidor y usa una caché en memoria de 15 minutos y hasta 100 juegos; las consultas simultáneas del mismo juego comparten la solicitud. La interfaz identifica a IsThereAnyDeal como fuente. [Documentación de ITAD](https://docs.isthereanydeal.com/).
 
 Se muestra el menor precio del período consultado, no un mínimo histórico de todos los tiempos. Las ofertas retiradas (`deal=null`) no se convierten en precio cero. Si ITAD falla se informa el error y se permite reintentar. La tabla `PriceRecord` se eliminó mediante una migración nueva que conserva las migraciones anteriores. Esa migración borra las observaciones locales de precios de la base donde se aplique; antes de actualizar una base con datos que quieras conservar, exportá esa tabla.
 
-El gráfico muestra una tienda por vez, conserva los USD originales y permite recorrer observaciones con el mouse o el teclado. Recibe todos los cambios devueltos por ITAD para el período, aunque la tabla esté paginada. La línea une observaciones y no garantiza disponibilidad continua entre ellas.
+El gráfico muestra una tienda por vez, conserva los USD originales y permite recorrer observaciones con el mouse o el teclado. Recibe todos los cambios devueltos por ITAD para el período, aunque la tabla esté paginada. Utiliza segmentos diagonales para mostrar picos y un relleno tenue; el eje horizontal abarca los 30 días completos sin agregar precios en sus extremos. La línea une observaciones y no garantiza disponibilidad continua entre ellas.
 
 Con `ENABLE_PRICE_CHECKS=true`, Express revisa los favoritos al iniciar y cada 30 minutos para generar notificaciones. Las alertas comparan precios actuales con los objetivos y no dependen de una tabla de historial. Para recibir mails hay que configurar Brevo, confirmar el correo desde la alerta y activar «Recibir también el aviso por mail» por juego. Solo se envían nuevos avisos de precio objetivo; las ofertas generales continúan en el buzón. El canal mail está desactivado por defecto.
 

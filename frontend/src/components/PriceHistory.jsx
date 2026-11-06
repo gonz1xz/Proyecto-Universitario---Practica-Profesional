@@ -38,11 +38,11 @@ export function PriceHistory({ gameId }) {
   return (
     <section aria-labelledby="history-title" aria-busy={loading || loadingMore}>
       <h3 id="history-title" className="text-lg font-semibold">Historial de precios</h3>
-      <p className="mt-2 text-sm leading-6 text-muted">Cambios de precio de los últimos tres meses. Fuente: <a href="https://isthereanydeal.com/" target="_blank" rel="noreferrer" className="text-primary underline">IsThereAnyDeal</a>.</p>
+      <p className="mt-2 text-sm leading-6 text-muted">Cambios de precio del último mes (30 días). Fuente: <a href="https://isthereanydeal.com/" target="_blank" rel="noreferrer" className="text-primary underline">IsThereAnyDeal</a>.</p>
       <p className="mt-2 text-xs leading-5 text-muted">Valores originales en USD, región US, sin conversión a ARS. Las fechas se muestran en tu hora local. Una tienda ausente no se registra como precio cero.</p>
 
       {loading ? <p className="py-8 text-sm text-muted" role="status">Cargando historial...</p> : data?.records.length ? <>
-        <PriceHistoryChart records={data.chartRecords || data.records} />
+        <PriceHistoryChart records={data.chartRecords || data.records} periodStart={data.periodStart} periodEnd={data.periodEnd} />
         <div className="history-summary">
           <span>Menor precio del período consultado</span>
           <strong>{formatHistoryPrice(data.lowestPrice)}</strong>
@@ -62,7 +62,7 @@ export function PriceHistory({ gameId }) {
           </table>
         </div>
         {data.hasMore && <button type="button" onClick={loadMore} disabled={loadingMore} className="button mt-4 border border-text/20 text-primary">{loadingMore ? 'Cargando...' : 'Ver registros anteriores'}</button>}
-      </> : !error && <p className="status-panel mt-5">ITAD no devolvió cambios de precio en USD para este juego durante los últimos tres meses.</p>}
+      </> : !error && <p className="status-panel mt-5">ITAD no devolvió cambios de precio en USD para este juego durante el último mes.</p>}
 
       {error && <div className="mt-5"><p role="alert" className="text-sm text-error">{error}</p><button type="button" onClick={() => setRetry(current => current + 1)} className="mt-3 text-sm text-primary underline">Reintentar historial</button></div>}
     </section>

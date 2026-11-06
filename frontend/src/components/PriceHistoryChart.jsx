@@ -6,7 +6,7 @@ const money = amount => formatDisplayPrice({ amount, currency: 'USD' });
 const shortDate = value => new Date(value).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 const fullDate = value => new Date(value).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' });
 
-export function PriceHistoryChart({ records }) {
+export function PriceHistoryChart({ records, periodStart, periodEnd }) {
   const selectId = useId();
   const stores = useMemo(() => [...new Map(records.map(record => [record.store.id, record.store])).values()]
     .sort((a, b) => a.name.localeCompare(b.name)), [records]);
@@ -16,24 +16,24 @@ export function PriceHistoryChart({ records }) {
   if (!selected || !points.length) return null;
   return <div className="price-chart">
     <div className="price-chart-heading">
-      <h4>Evolución del precio</h4>
+      <h4>Evolución del precio · Último mes</h4>
       <label htmlFor={selectId}>Tienda<select id={selectId} value={selected.id} onChange={event => setStoreId(event.target.value)}>
         {stores.map(store => <option key={store.id} value={store.id}>{store.name}</option>)}
       </select></label>
     </div>
-    <ChartSeries key={selected.id} points={points} storeName={selected.name} />
+    <ChartSeries key={selected.id} points={points} storeName={selected.name} periodStart={periodStart} periodEnd={periodEnd} />
     <p className="price-chart-note">Cambios registrados en esta tienda, en USD. La línea une observaciones; no garantiza disponibilidad continua. Usá el control inferior para recorrer las fechas con el teclado.</p>
   </div>;
 }
 
-function ChartSeries({ points, storeName }) {
+function ChartSeries({ points, storeName, periodStart, periodEnd }) {
   const id = useId();
   const containerRef = useRef(null);
   const [width, setWidth] = useState(580);
   const [index, setIndex] = useState(points.length - 1);
   const point = points[Math.min(index, points.length - 1)];
-  const geometry = useMemo(() => chartGeometry(points, width), [points, width]);
-  const { left, right, top, bottom, maxPrice, x, y, path } = geometry;
+  const geometry = useMemo(() => chartGeometry(points, width, 250, { startTime: Date.parse(periodStart), endTime: Date.parse(periodEnd) }), [points, width, periodStart, periodEnd]);
+  const { left, right, top, bottom, maxPrice, firstTime, lastTime, x, y, path, areaPath } = geometry;
   useEffect(() => {
     const observer = new ResizeObserver(entries => setWidth(Math.max(260, entries[0].contentRect.width)));
     observer.observe(containerRef.current);
@@ -48,9 +48,8 @@ function ChartSeries({ points, storeName }) {
     }
     setIndex(nearest);
   }
-  const dateTicks = points.length === 1 ? [points[0].time]
-    : width > 450 ? [points[0].time, (points[0].time + points.at(-1).time) / 2, points.at(-1).time]
-      : [points[0].time, points.at(-1).time];
+  const dateTicks = firstTime === lastTime ? [firstTime]
+    : width > 450 ? [firstTime, (firstTime + lastTime) / 2, lastTime] : [firstTime, lastTime];
   return <div ref={containerRef}>
     <div className="price-chart-reading" aria-live="polite">
       <strong>{money(point.price)}</strong><span>{fullDate(point.recordedAt)}</span>
@@ -67,6 +66,7 @@ function ChartSeries({ points, storeName }) {
       })}
       <text x={left - 10} y={top - 7} textAnchor="end" className="price-chart-axis">USD</text>
       {dateTicks.map((time, tick) => <text key={tick} x={x(time)} y={bottom + 25} textAnchor={tick === 0 && dateTicks.length > 1 ? 'start' : tick === dateTicks.length - 1 && dateTicks.length > 1 ? 'end' : 'middle'} className="price-chart-axis">{shortDate(time)}</text>)}
+      {areaPath && <path d={areaPath} className="price-chart-area" />}
       <path d={path} className="price-chart-line" />
       <line x1={x(point.time)} x2={x(point.time)} y1={top} y2={bottom} className="price-chart-cursor" />
       <circle cx={x(point.time)} cy={y(point.price)} r="5" className="price-chart-point" />

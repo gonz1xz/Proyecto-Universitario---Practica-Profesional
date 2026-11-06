@@ -6,16 +6,17 @@ export function priceSeries(records, storeId) {
     .sort((a, b) => a.time - b.time);
 }
 
-export function chartGeometry(points, width, height = 250) {
+export function chartGeometry(points, width, height = 250, period = {}) {
   const left = 58, right = width - 16, top = 18, bottom = height - 34;
-  const firstTime = points[0].time;
-  const lastTime = points.at(-1).time;
+  const firstTime = Number.isFinite(period.startTime) ? Math.min(period.startTime, points[0].time) : points[0].time;
+  const lastTime = Number.isFinite(period.endTime) ? Math.max(period.endTime, points.at(-1).time) : points.at(-1).time;
   const highest = points.reduce((max, point) => Math.max(max, point.price), 0);
   const maxPrice = Math.max(1, Math.ceil(highest * 1.1));
   const x = time => lastTime === firstTime ? (left + right) / 2 : left + (time - firstTime) / (lastTime - firstTime) * (right - left);
   const y = price => bottom - price / maxPrice * (bottom - top);
   const path = points.map((point, index) => index === 0
     ? `M ${x(point.time)} ${y(point.price)}`
-    : `H ${x(point.time)} V ${y(point.price)}`).join(' ');
-  return { left, right, top, bottom, maxPrice, x, y, path };
+    : `L ${x(point.time)} ${y(point.price)}`).join(' ');
+  const areaPath = points.length > 1 ? `${path} L ${x(points.at(-1).time)} ${bottom} L ${x(points[0].time)} ${bottom} Z` : '';
+  return { left, right, top, bottom, maxPrice, firstTime, lastTime, x, y, path, areaPath };
 }

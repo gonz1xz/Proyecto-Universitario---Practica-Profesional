@@ -69,6 +69,7 @@ test('endpoint de historial consulta ITAD sin persistir precios', async t => {
         assert.equal(url.pathname, '/games/history/v2');
         assert.equal(url.searchParams.get('id'), id);
         assert.equal(url.searchParams.get('country'), 'US');
+        assert.ok(Math.abs(Date.parse(url.searchParams.get('since')) - (Date.now() - 30 * 24 * 60 * 60 * 1000)) < 5000);
         assert.equal(url.searchParams.has('key'), false);
         assert.equal(options.headers['ITAD-API-Key'], process.env.ITAD_API_KEY);
         return Response.json([entry(1, 8), entry(2, 5, '2026-11-02T12:00:00Z')]);
@@ -77,7 +78,8 @@ test('endpoint de historial consulta ITAD sin persistir precios', async t => {
       assert.equal(response.status, 200);
       const page = await response.json();
       assert.equal(page.source, 'itad');
-      assert.equal(page.periodMonths, 3);
+      assert.equal(page.periodMonths, 1);
+      assert.equal(page.periodDays, 30);
       assert.equal(page.records[0].price, 5);
       assert.equal(page.lowestPrice, 5);
       assert.equal(page.firstRecordedAt, '2026-11-01T12:00:00.000Z');
@@ -90,6 +92,34 @@ test('endpoint de historial consulta ITAD sin persistir precios', async t => {
       assert.equal(next.hasMore, false);
       assert.equal(next.chartRecords, undefined, 'las páginas siguientes no repiten la serie completa');
       assert.equal(calls, 1);
+    });
+    await t.test('solo muestra el último mes y actualiza la ventana incluso con caché', async () => {
+      const id = randomUUID();
+      const realNow = Date.now;
+      let now = Date.parse('2026-11-05T12:00:00Z');
+      let calls = 0;
+      Date.now = () => now;
+      globalThis.fetch = async () => {
+        calls++;
+        return Response.json([
+          entry(1, 2, '2026-10-06T12:00:00Z'), entry(2, 6),
+          entry(3, 0, '2026-10-05T12:00:00Z'), entry(4, 1, '3000-01-01T00:00:00Z'),
+        ]);
+      };
+      try {
+        const monthly = await readHistory(id);
+        assert.equal(monthly.periodStart, '2026-10-06T12:00:00.000Z');
+        assert.equal(monthly.records.length, 2);
+        assert.equal(monthly.chartRecords.length, 2);
+        assert.equal(monthly.lowestPrice, 2, 'no usar mínimos anteriores al mes');
+        assert.equal(monthly.firstRecordedAt, '2026-10-06T12:00:00.000Z');
+        now += 5 * 60 * 1000;
+        const advanced = await readHistory(id);
+        assert.equal(advanced.records.length, 1);
+        assert.equal(advanced.lowestPrice, 6);
+        assert.equal(advanced.firstRecordedAt, '2026-11-01T12:00:00.000Z');
+        assert.equal(calls, 1, 'filtrar de nuevo sin repetir la consulta externa');
+      } finally { Date.now = realNow; }
     });
     await t.test('caché vence y comparte consultas simultáneas', async () => {
       const id = randomUUID();

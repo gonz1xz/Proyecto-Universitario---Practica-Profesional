@@ -2,6 +2,7 @@ const cache = new Map();
 const pending = new Map();
 const CACHE_DURATION = 15 * 60 * 1000;
 const MAX_CACHED_GAMES = 100;
+const HISTORY_DURATION = 30 * 24 * 60 * 60 * 1000;
 
 function historyError(message, status = 502) {
   return Object.assign(new Error(message), { status });
@@ -33,6 +34,7 @@ async function loadHistory(gameId) {
   const url = new URL('https://api.isthereanydeal.com/games/history/v2');
   url.searchParams.set('id', gameId);
   url.searchParams.set('country', 'US');
+  url.searchParams.set('since', new Date(Date.now() - HISTORY_DURATION).toISOString());
   let response;
   try {
     response = await fetch(url, {
@@ -50,11 +52,7 @@ async function loadHistory(gameId) {
   try { data = await response.json(); }
   catch { throw historyError('ITAD devolvió un historial con un formato inesperado.'); }
   const records = normalizeHistory(data);
-  const summary = {
-    records,
-    lowestPrice: records.length ? records.reduce((lowest, record) => Math.min(lowest, record.price), Infinity) : null,
-    firstRecordedAt: records.length ? records.at(-1).recordedAt : null,
-  };
+  const summary = { records };
   if (cache.size >= MAX_CACHED_GAMES) cache.delete(cache.keys().next().value);
   cache.set(gameId, { ...summary, expiresAt: Date.now() + CACHE_DURATION });
   return summary;
@@ -69,11 +67,18 @@ export async function getPriceHistory(gameId, limit = 50, offset = 0) {
     }
     history = await pending.get(gameId);
   }
-  const records = history.records.slice(offset, offset + limit);
+  const now = Date.now();
+  const periodStart = new Date(now - HISTORY_DURATION).toISOString();
+  const periodEnd = new Date(now).toISOString();
+  // Filtrar también la caché: la ventana avanza aunque aún no hayan pasado sus 15 minutos.
+  const monthlyRecords = history.records.filter(record => record.recordedAt >= periodStart && record.recordedAt <= periodEnd);
+  const records = monthlyRecords.slice(offset, offset + limit);
   return {
-    records, hasMore: offset + records.length < history.records.length,
-    nextOffset: offset + records.length, lowestPrice: history.lowestPrice,
-    firstRecordedAt: history.firstRecordedAt, source: 'itad', periodMonths: 3,
-    ...(offset === 0 ? { chartRecords: history.records } : {}),
+    records, hasMore: offset + records.length < monthlyRecords.length,
+    nextOffset: offset + records.length,
+    lowestPrice: monthlyRecords.length ? monthlyRecords.reduce((lowest, record) => Math.min(lowest, record.price), Infinity) : null,
+    firstRecordedAt: monthlyRecords.length ? monthlyRecords.at(-1).recordedAt : null,
+    source: 'itad', periodMonths: 1, periodDays: 30, periodStart, periodEnd,
+    ...(offset === 0 ? { chartRecords: monthlyRecords } : {}),
   };
 }
