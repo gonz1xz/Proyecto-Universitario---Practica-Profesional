@@ -17,6 +17,5 @@ export function chartGeometry(points, width, height = 250, period = {}) {
   const path = points.map((point, index) => index === 0
     ? `M ${x(point.time)} ${y(point.price)}`
     : `L ${x(point.time)} ${y(point.price)}`).join(' ');
-  const areaPath = points.length > 1 ? `${path} L ${x(points.at(-1).time)} ${bottom} L ${x(points[0].time)} ${bottom} Z` : '';
-  return { left, right, top, bottom, maxPrice, firstTime, lastTime, x, y, path, areaPath };
+  return { left, right, top, bottom, maxPrice, firstTime, lastTime, x, y, path };
 }

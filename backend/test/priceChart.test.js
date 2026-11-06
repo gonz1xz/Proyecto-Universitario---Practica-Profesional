@@ -44,5 +44,4 @@ test('gráfico: encuadra el mes completo sin inventar precios en los extremos', 
   assert.equal((chart.path.match(/L /g) || []).length, 2);
   assert.ok(chart.y(points[1].price) < chart.y(points[0].price));
   assert.ok(chart.y(points[2].price) > chart.y(points[1].price));
-  assert.ok(chart.areaPath.endsWith(' Z'));
 });
