@@ -20,8 +20,10 @@ export function VerifyEmailPage() {
     <h1 className="text-2xl font-semibold">Confirmá tu correo</h1>
     <p className="mt-4 text-muted">Esta confirmación permite activar los avisos por mail de tus alertas de precio.</p>
     {!token && <p role="alert" className="mt-4 text-error">El enlace está incompleto. Solicitá uno nuevo desde la alerta de un juego.</p>}
-    {token && status !== 'success' && <button type="button" className="button button-primary mt-6" disabled={status === 'saving'} onClick={confirm}>{status === 'saving' ? 'Confirmando...' : 'Confirmar mi correo'}</button>}
-    {message && <p role={status === 'error' ? 'alert' : 'status'} className={`mt-4 ${status === 'error' ? 'text-error' : 'text-primary'}`}>{message}</p>}
-    <Link to="/mis-favoritos" className="mt-6 inline-block text-primary underline">Ir a mis favoritos</Link>
+    <div className="mt-6 flex flex-col items-start gap-5">
+      {token && status !== 'success' && <button type="button" className="button button-primary" disabled={status === 'saving'} onClick={confirm}>{status === 'saving' ? 'Confirmando...' : 'Confirmar mi correo'}</button>}
+      {message && <p role={status === 'error' ? 'alert' : 'status'} className={status === 'error' ? 'text-error' : 'text-primary'}>{message}</p>}
+      <Link to="/mis-favoritos" className="inline-flex min-h-11 items-center text-primary underline">Ir a mis favoritos</Link>
+    </div>
   </main>;
 }
