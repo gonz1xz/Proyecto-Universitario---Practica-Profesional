@@ -49,7 +49,7 @@ export const SiteLayout = () => {
             <nav aria-label="Navegación principal" className="flex flex-wrap gap-x-5 sm:gap-x-7">
               <NavItem to="/" end>Inicio</NavItem>
               <NavItem to="/buscar">Explorar juegos</NavItem>
-              {user && !loading && <><NavItem to="/mis-favoritos">Mis favoritos</NavItem><NavItem to="/notificaciones">Notificaciones</NavItem></>}
+              {user && !loading && <><NavItem to="/mis-favoritos">Mis favoritos</NavItem><NavItem to="/mis-alertas">Mis alertas</NavItem><NavItem to="/notificaciones">Notificaciones</NavItem></>}
             </nav>
           </div>
         </div>

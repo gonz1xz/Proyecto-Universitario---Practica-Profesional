@@ -30,6 +30,9 @@ function providerEmailError(status, data) {
   // Usar el mensaje externo para clasificar, nunca devolverlo ni registrarlo completo.
   const message = typeof data?.message === 'string' ? data.message.toLowerCase() : '';
   const code = typeof data?.code === 'string' ? data.code : '';
+  if ((status === 401 || status === 403) && /ip address|unrecogniz.*ip|unauthoriz.*ip/.test(message)) {
+    return new EmailError('El servicio de correo bloqueó la conexión del servidor. Es necesario autorizar su dirección IP en Brevo.', 'EMAIL_IP_BLOCKED', 503, status);
+  }
   if (message.includes('sender') && /not valid|invalid|not verified|not activated/.test(message)) {
     return new EmailError('El remitente del correo todavía no está habilitado. Verificá su dirección en Brevo.', 'EMAIL_SENDER_UNVERIFIED', 502, status);
   }

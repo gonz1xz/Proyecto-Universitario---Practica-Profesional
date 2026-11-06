@@ -12,6 +12,7 @@ test('correo Brevo: errores seguros, formato de envío e idempotencia', async ()
   process.env.NODE_ENV = 'development';
   const payload = { from: process.env.EMAIL_FROM, to: ['destinatario@example.com'], subject: 'Prueba', text: 'Prueba' };
   const cases = [
+    [401, { code: 'unauthorized', message: 'We have detected an unrecognised IP address 203.0.113.1' }, 'EMAIL_IP_BLOCKED', 503],
     [400, { code: 'invalid_parameter', message: 'Sender privado@example.com is not valid.' }, 'EMAIL_SENDER_UNVERIFIED', 502],
     [400, { code: 'invalid_parameter', message: 'Sender privado.example is not verified.' }, 'EMAIL_SENDER_UNVERIFIED', 502],
     [401, { name: 'validation_error', message: 'API key is invalid: secreto-de-prueba' }, 'EMAIL_AUTH', 503],
@@ -32,7 +33,7 @@ test('correo Brevo: errores seguros, formato de envío e idempotencia', async ()
         assert.equal(error.code, code);
         assert.equal(error.status, expectedStatus);
         assert.equal(error.providerStatus, status);
-        assert.doesNotMatch(error.message, /privado@example|privado.example|secreto-de-prueba|re_clave_ficticia/);
+        assert.doesNotMatch(error.message, /privado@example|privado.example|secreto-de-prueba|re_clave_ficticia|203\.0\.113\./);
         return true;
       });
     }

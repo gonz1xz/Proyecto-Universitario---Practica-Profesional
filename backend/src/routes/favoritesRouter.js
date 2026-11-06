@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../prisma.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
+import { getGameInfo } from '../services/gameInfo.js';
 
 const router = Router();
 const validGameId = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -15,16 +16,6 @@ router.use(async (req, res, next) => {
     next();
   } catch { res.status(500).json({ message: 'No se pudo comprobar la sesión.' }); }
 });
-
-async function getGameInfo(id) {
-  const url = new URL('https://api.isthereanydeal.com/games/info/v2');
-  url.searchParams.set('id', id);
-  const response = await fetch(url, { headers: { 'ITAD-API-Key': process.env.ITAD_API_KEY }, signal: AbortSignal.timeout(10000) });
-  if (!response.ok) { const error = new Error('No se pudo consultar el juego.'); error.status = response.status === 404 ? 404 : 502; throw error; }
-  const info = await response.json();
-  if (info.id !== id || typeof info.title !== 'string') throw new Error('El juego recibido no es válido.');
-  return info;
-}
 
 async function getFavoritePrices(ids) {
   if (!ids.length) return new Map();

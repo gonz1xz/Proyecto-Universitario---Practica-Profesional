@@ -4,6 +4,7 @@ import { requireAuth } from '../middlewares/requireAuth.js';
 import rateLimit from 'express-rate-limit';
 import { EmailError, emailConfiguration } from '../services/email.js';
 import { requestEmailVerification } from '../services/emailVerification.js';
+import { getGameInfo } from '../services/gameInfo.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -15,6 +16,7 @@ router.use(async (req, res, next) => {
 });
 
 router.get('/email/status', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { email: true, emailVerifiedAt: true } });
     res.json({ email: user.email, verified: Boolean(user.emailVerifiedAt), configured: Boolean(emailConfiguration()) });
@@ -37,6 +39,45 @@ router.post('/email/verification', verificationLimiter, async (req, res) => {
     console.error(`No se pudo preparar la confirmación de correo. Código: ${code}.`);
     res.status(500).json({ message: 'No se pudo preparar la confirmación del correo en el servidor. Intentá nuevamente.' });
   }
+});
+
+router.get('/alerts', async (req, res) => {
+  const offsetValue = req.query.offset ?? '0';
+  const offset = Number(offsetValue);
+  if (typeof offsetValue !== 'string' || !/^\d+$/.test(offsetValue) || !Number.isSafeInteger(offset)) {
+    return res.status(400).json({ message: 'La paginación de alertas no es válida.' });
+  }
+  try {
+    const where = { userId: req.userId };
+    const [alerts, total] = await Promise.all([
+      prisma.priceAlert.findMany({ where, include: { game: true }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: offset, take: 24 }),
+      prisma.priceAlert.count({ where }),
+    ]);
+    const items = await Promise.all(alerts.map(async alert => {
+      const id = alert.game.itadGameId;
+      let title = 'Juego guardado';
+      let detailsUnavailable = false;
+      try { title = (await getGameInfo(id)).title; } catch { detailsUnavailable = true; }
+      return { id: alert.id, targetPrice: alert.targetPrice, currency: alert.currency,
+        isActive: alert.isActive, emailEnabled: alert.emailEnabled, notified: alert.notified,
+        game: { id, title, detailsUnavailable } };
+    }));
+    res.json({ alerts: items, total, hasMore: offset + items.length < total, nextOffset: offset + items.length });
+  } catch { res.status(500).json({ message: 'No se pudieron cargar tus alertas.' }); }
+});
+
+router.delete('/alerts/:itadGameId', async (req, res) => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.itadGameId)) {
+    return res.status(400).json({ message: 'El identificador del juego no es válido.' });
+  }
+  const itadGameId = req.params.itadGameId.toLowerCase();
+  try {
+    await prisma.$transaction([
+      prisma.priceAlert.deleteMany({ where: { userId: req.userId, game: { itadGameId } } }),
+      prisma.notification.updateMany({ where: { userId: req.userId, itadGameId, emailStatus: 'pending', type: 'target' }, data: { emailStatus: 'cancelled' } }),
+    ]);
+    res.status(204).end();
+  } catch { res.status(500).json({ message: 'No se pudo eliminar la alerta.' }); }
 });
 
 router.get('/alerts/:itadGameId', async (req, res) => {

@@ -216,6 +216,12 @@ Reemplazá el dominio de ejemplo por el real. Las variables `VITE_` se incluyen 
 
 Las migraciones crean la estructura de una base nueva, pero no trasladan los datos locales. Los planes gratuitos pueden suspender servicios o limitar recursos; revisá sus condiciones antes de desplegar. El temporizador actual requiere que Express permanezca ejecutándose.
 
+## Administrar alertas
+
+La sección **Mis alertas** muestra las alertas de precio de la cuenta, incluidas las pausadas, en páginas de 24 registros. Permite editar el objetivo y los canales, o eliminar una alerta con confirmación. Eliminarla conserva el juego en favoritos y las notificaciones recibidas; cancela sus mails pendientes de precio objetivo. Un envío ya en curso no puede retirarse del proveedor. Los avisos generales de ofertas siguen dependiendo de los favoritos.
+
+La confirmación del correo está disponible en Mis alertas y en el formulario de cada juego. Sus controles permanecen visibles si falla la consulta del estado o el canal no está disponible. Para enviar desde producción hay que configurar `BREVO_API_KEY`, `EMAIL_FROM` y `FRONTEND_URL` en Render; el `.env` local no se publica con Git.
+
 ## Alcance académico
 
 AuraPrices es un proyecto en evolución para practicar frontend, APIs, autenticación, bases relacionales y despliegue. Los precios, imágenes y metadatos dependen de proveedores externos. No procesa pagos ni vende videojuegos: permite explorar ofertas y acceder a las tiendas correspondientes.
