@@ -70,6 +70,7 @@ test('endpoint de historial consulta ITAD sin persistir precios', async t => {
         assert.equal(url.searchParams.get('id'), id);
         assert.equal(url.searchParams.get('country'), 'US');
         assert.ok(Math.abs(Date.parse(url.searchParams.get('since')) - (Date.now() - 30 * 24 * 60 * 60 * 1000)) < 5000);
+        assert.match(url.searchParams.get('since'), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, 'ITAD requiere since sin fracciones de segundo');
         assert.equal(url.searchParams.has('key'), false);
         assert.equal(options.headers['ITAD-API-Key'], process.env.ITAD_API_KEY);
         return Response.json([entry(1, 8), entry(2, 5, '2026-11-02T12:00:00Z')]);

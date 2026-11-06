@@ -34,7 +34,8 @@ async function loadHistory(gameId) {
   const url = new URL('https://api.isthereanydeal.com/games/history/v2');
   url.searchParams.set('id', gameId);
   url.searchParams.set('country', 'US');
-  url.searchParams.set('since', new Date(Date.now() - HISTORY_DURATION).toISOString());
+  // ITAD rechaza las fracciones de segundo de toISOString() en este parámetro.
+  url.searchParams.set('since', new Date(Date.now() - HISTORY_DURATION).toISOString().replace(/\.\d{3}Z$/, 'Z'));
   let response;
   try {
     response = await fetch(url, {
